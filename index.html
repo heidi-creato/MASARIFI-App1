@@ -1,921 +1,199 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>REFEREE – حكم المباريات</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MyExpenses - مصاريفي</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-:root {
-  --clr-bg: #0a0a0f;
-  --clr-surface: #12121a;
-  --clr-card: #1a1a26;
-  --clr-border: rgba(255,255,255,0.06);
-  --clr-accent: #00e676;
-  --clr-accent2: #ff6b35;
-  --clr-yellow: #ffd600;
-  --clr-text: #ffffff;
-  --clr-muted: rgba(255,255,255,0.5);
-  --timer-color: #00e676;
-  --radius: 20px;
-  --radius-sm: 12px;
-}
-
-body {
-  background: var(--clr-bg);
-  color: var(--clr-text);
-  font-family: 'Cairo', sans-serif;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Pages */
-.page { display: none; min-height: 100vh; }
-.page.active { display: flex; flex-direction: column; }
-
-/* AUTH - بسيطة بدون رسائل وهمية */
-#auth-page {
-  background: radial-gradient(ellipse at 50% 0%, #1a2a1a 0%, var(--clr-bg) 60%);
-  justify-content: center;
-  align-items: center;
-  padding: 24px;
-}
-.auth-logo { text-align: center; margin-bottom: 40px; }
-.auth-logo .logo-word {
-  font-family: 'Cairo', sans-serif;
-  font-size: 56px;
-  font-weight: 900;
-  letter-spacing: 4px;
-  color: var(--clr-accent);
-}
-.auth-box {
-  background: var(--clr-card);
-  border: 1px solid var(--clr-border);
-  border-radius: var(--radius);
-  padding: 28px 24px;
-  width: 100%;
-  max-width: 420px;
-}
-.auth-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
-.auth-tab {
-  flex: 1;
-  padding: 10px;
-  background: var(--clr-surface);
-  border: none;
-  border-radius: 40px;
-  color: var(--clr-muted);
-  font-weight: 700;
-  font-family: 'Cairo', sans-serif;
-  cursor: pointer;
-}
-.auth-tab.active { background: var(--clr-accent); color: #000; }
-.auth-form { display: none; }
-.auth-form.active { display: block; }
-.field-input {
-  width: 100%;
-  background: var(--clr-surface);
-  border: 1px solid var(--clr-border);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  color: white;
-  font-family: 'Cairo', sans-serif;
-  margin-bottom: 16px;
-}
-.btn-primary {
-  width: 100%;
-  padding: 16px;
-  background: var(--clr-accent);
-  color: #000;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-weight: 900;
-  font-family: 'Cairo', sans-serif;
-  cursor: pointer;
-}
-.auth-msg { margin-top: 12px; font-size: 13px; text-align: center; display: none; }
-
-/* HOME مع إحصائيات حقيقية */
-#home-page { background: var(--clr-bg); }
-.home-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--clr-border);
-}
-.home-logo { font-family: 'Cairo', sans-serif; font-size: 28px; font-weight: 900; color: var(--clr-accent); }
-.user-avatar {
-  width: 44px;
-  height: 44px;
-  background: var(--clr-accent);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-family: 'Cairo', sans-serif;
-  cursor: pointer;
-}
-.home-content { padding: 24px; overflow-y: auto; }
-.quick-match-btn {
-  width: 100%;
-  background: linear-gradient(135deg, var(--clr-accent), #00c853);
-  border: none;
-  border-radius: var(--radius);
-  padding: 22px;
-  font-size: 20px;
-  font-weight: 900;
-  font-family: 'Cairo', sans-serif;
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 32px;
-  cursor: pointer;
-  color: #000;
-}
-.section-title {
-  font-size: 13px;
-  color: var(--clr-muted);
-  letter-spacing: 2px;
-  margin-bottom: 16px;
-  font-weight: 700;
-}
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 32px;
-}
-.stat-card {
-  background: var(--clr-card);
-  border: 1px solid var(--clr-border);
-  border-radius: var(--radius);
-  padding: 16px 8px;
-  text-align: center;
-}
-.stat-num {
-  font-family: 'Oswald', sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--clr-accent);
-}
-.stat-label { font-size: 12px; color: var(--clr-muted); margin-top: 4px; }
-.recent-item {
-  background: var(--clr-card);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-}
-
-/* SETUP */
-.setup-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--clr-border);
-}
-.back-btn {
-  width: 44px;
-  height: 44px;
-  background: var(--clr-card);
-  border: 1px solid var(--clr-border);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  cursor: pointer;
-}
-.setup-title { font-family: 'Cairo', sans-serif; font-weight: 900; font-size: 22px; }
-.setup-content { padding: 24px; }
-.player-input-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--clr-card);
-  border-radius: var(--radius-sm);
-  padding: 8px 16px;
-  margin-bottom: 16px;
-}
-.player-num {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-}
-.p1-num { background: var(--clr-accent); color: #000; }
-.p2-num { background: var(--clr-accent2); color: #fff; }
-.player-name-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: white;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: 'Cairo', sans-serif;
-  padding: 12px 0;
-  outline: none;
-}
-.level-grid {
-  display: grid;
-  grid-template-columns: repeat(2,1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.level-btn {
-  background: var(--clr-card);
-  border: 2px solid var(--clr-border);
-  border-radius: var(--radius-sm);
-  padding: 16px;
-  text-align: center;
-  cursor: pointer;
-}
-.level-btn.selected { border-color: var(--clr-accent); background: rgba(0,230,118,0.1); }
-.level-time { font-family: 'Oswald', sans-serif; font-size: 28px; font-weight: 600; color: var(--clr-accent); }
-.cards-count-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--clr-card);
-  padding: 16px;
-  border-radius: var(--radius-sm);
-  margin-bottom: 32px;
-}
-.count-ctrl { display: flex; gap: 16px; align-items: center; }
-.count-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--clr-surface);
-  border: 1px solid var(--clr-border);
-  font-size: 24px;
-  cursor: pointer;
-  color: white;
-}
-.count-val { font-family: 'Oswald', sans-serif; font-size: 32px; min-width: 50px; text-align: center; }
-.start-game-btn {
-  width: 100%;
-  padding: 18px;
-  background: var(--clr-accent);
-  border: none;
-  border-radius: var(--radius);
-  font-size: 20px;
-  font-weight: 900;
-  font-family: 'Cairo', sans-serif;
-  cursor: pointer;
-  color: #000;
-}
-
-/* GAME PAGE */
-#game-page { background: #070710; }
-.game-top {
-  display: flex;
-  justify-content: space-between;
-  padding: 16px;
-  gap: 12px;
-}
-.player-score-card {
-  flex: 1;
-  background: var(--clr-card);
-  border: 2px solid var(--clr-border);
-  border-radius: var(--radius);
-  padding: 12px;
-  text-align: center;
-}
-.player-score-card.active { border-color: var(--clr-accent); }
-.player-score-card.p2-active { border-color: var(--clr-accent2); }
-.ps-name {
-  font-size: 15px;
-  font-weight: 800;
-  font-family: 'Cairo', sans-serif;
-  color: var(--clr-muted);
-}
-.ps-points {
-  font-family: 'Oswald', sans-serif;
-  font-size: 48px;
-  font-weight: 600;
-  line-height: 1;
-  text-shadow: none;
-}
-.p1-score .ps-points { color: var(--clr-accent); }
-.p2-score .ps-points { color: var(--clr-accent2); }
-.round-info {
-  background: rgba(0,0,0,0.5);
-  border-radius: 40px;
-  padding: 8px 16px;
-  text-align: center;
-  min-width: 80px;
-}
-.round-num { font-family: 'Oswald', sans-serif; font-size: 28px; font-weight: 700; }
-
-/* TIMER */
-.timer-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.timer-ring-container {
-  position: relative;
-  width: min(70vw, 300px);
-  height: min(70vw, 300px);
-  margin: 0 auto;
-}
-.timer-svg {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-.timer-bg-circle { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 8; }
-.timer-progress-circle {
-  fill: none;
-  stroke: var(--timer-color);
-  stroke-width: 8;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.85s linear;
-}
-.timer-display {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Oswald', sans-serif;
-  font-size: min(22vw, 96px);
-  font-weight: 700;
-  color: var(--timer-color);
-  text-shadow: none;
-}
-.timer-countdown-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Oswald', sans-serif;
-  font-size: min(26vw, 110px);
-  font-weight: 700;
-  color: var(--clr-yellow);
-  background: rgba(0,0,0,0.6);
-  border-radius: 50%;
-  backdrop-filter: blur(4px);
-}
-.start-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.5);
-  border-radius: 50%;
-  cursor: pointer;
-  z-index: 10;
-}
-.start-overlay.hidden { display: none; }
-.start-word {
-  font-family: 'Cairo', sans-serif;
-  font-weight: 900;
-  font-size: min(18vw, 70px);
-  color: var(--clr-accent);
-  animation: pulse 1.4s infinite;
-}
-@keyframes pulse { 0%,100%{ opacity: 0.8; transform: scale(1); } 50%{ opacity: 1; transform: scale(1.03); } }
-
-.cards-on-table {
-  margin-top: 24px;
-  background: rgba(0,0,0,0.6);
-  padding: 8px 24px;
-  border-radius: 60px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.table-points-badge {
-  background: var(--clr-yellow);
-  color: #000;
-  font-family: 'Oswald', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  padding: 4px 20px;
-  border-radius: 40px;
-}
-.game-controls {
-  padding: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-}
-.ctrl-btn {
-  padding: 14px 20px;
-  border: none;
-  border-radius: 60px;
-  font-weight: 900;
-  font-size: 15px;
-  font-family: 'Cairo', sans-serif;
-  cursor: pointer;
-  flex: 1;
-  min-width: 100px;
-}
-.btn-p1 { background: var(--clr-accent); color: #000; }
-.btn-p2 { background: var(--clr-accent2); color: #fff; }
-.btn-no-one { background: var(--clr-card); color: var(--clr-muted); border: 1px solid var(--clr-border); }
-.btn-pause { background: #2c2c3a; color: white; }
-.btn-end { background: rgba(255,23,68,0.9); color: white; }
-
-/* WINNER MODAL */
-.winner-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.94);
-  backdrop-filter: blur(10px);
-  z-index: 200;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 24px;
-}
-.winner-overlay.show { display: flex; }
-.winner-crown { font-size: 80px; margin-bottom: 12px; }
-.winner-title {
-  font-family: 'Cairo', sans-serif;
-  font-size: 40px;
-  font-weight: 900;
-  color: var(--clr-yellow);
-}
-.winner-name {
-  font-size: 34px;
-  font-weight: 900;
-  font-family: 'Cairo', sans-serif;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin: 16px 0 8px;
-}
-.winner-score {
-  font-family: 'Oswald', sans-serif;
-  font-size: 24px;
-  color: var(--clr-accent);
-  margin-bottom: 32px;
-}
-.winner-buttons {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 400px;
-  width: 100%;
-}
-.winner-btn {
-  padding: 16px 28px;
-  border-radius: 60px;
-  font-weight: 900;
-  font-size: 18px;
-  font-family: 'Cairo', sans-serif;
-  cursor: pointer;
-  border: none;
-  flex: 1;
-  min-width: 160px;
-}
-.winner-btn-main { background: var(--clr-accent); color: #000; }
-.winner-btn-new { background: var(--clr-card); color: white; border: 1px solid var(--clr-border); }
-
-.round-result-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 150;
-  align-items: center;
-  justify-content: center;
-}
-.round-result-overlay.show { display: flex; }
-.rr-card {
-  background: var(--clr-card);
-  border-radius: var(--radius);
-  padding: 32px;
-  text-align: center;
-  width: 280px;
-}
-.rr-pot { font-family: 'Oswald', sans-serif; font-size: 68px; font-weight: 700; color: var(--clr-yellow); }
-.rr-btn {
-  padding: 14px;
-  margin: 8px 0;
-  border-radius: 60px;
-  font-weight: 900;
-  font-family: 'Cairo', sans-serif;
-  cursor: pointer;
-  border: none;
-  width: 100%;
-}
-.rr-p1 { background: var(--clr-accent); color: #000; }
-.rr-p2 { background: var(--clr-accent2); color: #fff; }
-.rr-none { background: var(--clr-surface); color: #aaa; }
+:root{--bg:#f5f6f3;--card:#fff;--ink:#17231f;--mute:#6b7872;--line:#e3e7e2;--ac:#0e5a4a;--acb:#e4f0ec;--danger:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101614;--card:#18211e;--ink:#e8eeeb;--mute:#8d9b95;--line:#27332f;--ac:#5fc2a8;--acb:#1d2e29;--danger:#f2b8b5;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101614;--card:#18211e;--ink:#e8eeeb;--mute:#8d9b95;--line:#27332f;--ac:#5fc2a8;--acb:#1d2e29;--danger:#f2b8b5;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;font-size:16px}
+button,input,select,textarea{font:inherit;color:inherit}
+main{max-width:640px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+h1{font-size:22px;margin:8px 0 16px;font-weight:600}h2{font-size:15px;margin:22px 0 10px;color:var(--mute);font-weight:500}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:12px}.grow{flex:1;min-width:0}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;display:inline-block}
+.big{font-size:34px;font-weight:600;line-height:1.3}.mute{color:var(--mute);font-size:13px}
+.ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;flex:none}
+.item{cursor:pointer}.item b{font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{border:0;background:var(--ac);color:var(--bg);border-radius:10px;padding:11px 16px;font-weight:500;cursor:pointer}
+.btn.sec{background:var(--acb);color:var(--ac)}.btn.dng{background:var(--danger);color:#fff}
+.btn.full{width:100%}.btns{display:flex;gap:8px;margin-top:14px}
+.bar{display:flex;gap:8px;margin-bottom:12px}
+input,select,textarea{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:0}
+input:focus,select:focus,textarea:focus,.btn:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+nav{position:fixed;inset:auto 0 0 0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;max-width:140px;background:none;border:0;padding:10px 0 9px;color:var(--mute);font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button.on{color:var(--ac);font-weight:600}nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fab{position:fixed;inset-inline-start:16px;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:6;border-radius:28px;padding:14px 20px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));animation:up .2s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:0}}@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.sw{display:flex;gap:8px;flex-wrap:wrap}.sw button{width:38px;height:38px;border-radius:10px;border:2px solid transparent;cursor:pointer;background:var(--card);font-size:18px}.sw button.on{border-color:var(--ac)}
+.empty{text-align:center;color:var(--mute);padding:36px 10px}.toast{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:30;font-size:14px}
+.back{background:none;border:0;color:var(--ac);padding:0;cursor:pointer;margin-bottom:4px}.pin{color:var(--ac)}
 </style>
 </head>
 <body>
-
-<!-- AUTH بدون رسائل وهمية -->
-<div class="page active" id="auth-page">
-  <div class="auth-logo"><div class="logo-word">REFEREE</div></div>
-  <div class="auth-box">
-    <div class="auth-tabs"><button class="auth-tab active" onclick="switchTab('login')">دخول</button><button class="auth-tab" onclick="switchTab('register')">حساب جديد</button></div>
-    <div id="login-form" class="auth-form active">
-      <input type="text" id="login-name" class="field-input" placeholder="اسم المستخدم">
-      <button class="btn-primary" onclick="handleLogin()">دخول</button>
-    </div>
-    <div id="register-form" class="auth-form">
-      <input type="text" id="reg-name" class="field-input" placeholder="اسمك">
-      <button class="btn-primary" onclick="handleRegister()">إنشاء حساب</button>
-    </div>
-  </div>
-</div>
-
-<!-- HOME مع إحصائيات -->
-<div class="page" id="home-page">
-  <div class="home-header"><div class="home-logo">REFEREE</div><div class="user-avatar" onclick="logout()">R</div></div>
-  <div class="home-content">
-    <button class="quick-match-btn" onclick="showSetup()">⚽ مباراة جديدة ←</button>
-    <div class="section-title">📊 إحصائياتي</div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-num" id="statMatches">0</div><div class="stat-label">مباريات</div></div>
-      <div class="stat-card"><div class="stat-num" id="statWins">0</div><div class="stat-label">انتصارات</div></div>
-      <div class="stat-card"><div class="stat-num" id="statPoints">0</div><div class="stat-label">أكبر نقاط</div></div>
-    </div>
-    <div class="section-title">📋 آخر المباريات</div>
-    <div id="recent-list" class="recent-list"><div class="recent-item">لا توجد مباريات بعد</div></div>
-  </div>
-</div>
-
-<!-- SETUP -->
-<div class="page" id="setup-page">
-  <div class="setup-header"><div class="back-btn" onclick="showHome()">←</div><div class="setup-title">إعداد المباراة</div></div>
-  <div class="setup-content">
-    <div class="player-input-row"><div class="player-num p1-num">1</div><input type="text" id="p1-name" class="player-name-input" placeholder="اسم اللاعب الأول"></div>
-    <div class="player-input-row"><div class="player-num p2-num">2</div><input type="text" id="p2-name" class="player-name-input" placeholder="اسم اللاعب الثاني"></div>
-    <div class="section-title">الوقت لكل جولة</div>
-    <div class="level-grid"><div class="level-btn" onclick="setLevel(5,this)"><div class="level-time">5</div><div>ثواني</div></div><div class="level-btn selected" onclick="setLevel(10,this)"><div class="level-time">10</div><div>ثواني</div></div><div class="level-btn" onclick="setLevel(15,this)"><div class="level-time">15</div><div>ثواني</div></div><div class="level-btn" onclick="setLevel(20,this)"><div class="level-time">20</div><div>ثواني</div></div></div>
-    <div class="cards-count-row"><span>عدد الكروت</span><div class="count-ctrl"><button class="count-btn" onclick="changeCards(-10)">−</button><div class="count-val" id="cardsTotal">40</div><button class="count-btn" onclick="changeCards(10)">+</button></div></div>
-    <button class="start-game-btn" onclick="initGame()">🚀 ابدأ المباراة</button>
-  </div>
-</div>
-
-<!-- GAME PAGE -->
-<div class="page" id="game-page">
-  <div class="game-top">
-    <div class="player-score-card p1-score" id="p1Card"><div class="ps-name" id="p1Name">لاعب 1</div><div class="ps-points" id="p1Points">0</div></div>
-    <div class="round-info"><div>الجولة</div><div class="round-num" id="roundNum">1</div></div>
-    <div class="player-score-card p2-score" id="p2Card"><div class="ps-name" id="p2Name">لاعب 2</div><div class="ps-points" id="p2Points">0</div></div>
-  </div>
-  <div class="timer-section">
-    <div class="timer-ring-container">
-      <svg class="timer-svg" viewBox="0 0 100 100"><circle class="timer-bg-circle" cx="50" cy="50" r="44"/><circle class="timer-progress-circle" id="timerRing" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg>
-      <div class="timer-display" id="timerDisplay">0</div>
-      <div class="timer-countdown-overlay" id="countdownOverlay" style="display:none">3</div>
-      <div class="start-overlay" id="startOverlay" onclick="startRound()"><div class="start-word">ابدأ</div></div>
-    </div>
-    <div class="cards-on-table"><span>🃏 كروت الطاولة</span><div class="table-points-badge" id="tableCards">2</div><span id="remainingText" style="font-family:Cairo;">متبقي: 40</span></div>
-    <div class="game-controls">
-      <button class="ctrl-btn btn-p1" onclick="awardWinner(1)">🏆 فاز</button>
-      <button class="ctrl-btn btn-p2" onclick="awardWinner(2)">🏆 فاز</button>
-      <button class="ctrl-btn btn-no-one" onclick="awardWinner(0)">❌ لا أحد</button>
-      <button class="ctrl-btn btn-pause" id="pauseBtn" onclick="pauseGame()">⏸ إيقاف</button>
-      <button class="ctrl-btn btn-end" onclick="forceEndGame()">🏁 إنهاء المباراة</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODALS -->
-<div class="round-result-overlay" id="roundModal"><div class="rr-card"><div class="rr-pot" id="modalPot">2</div><div>كرت على الطاولة</div><button class="rr-btn rr-p1" id="modalP1Btn" onclick="selectWinner(1)">اللاعب الأول</button><button class="rr-btn rr-p2" id="modalP2Btn" onclick="selectWinner(2)">اللاعب الثاني</button><button class="rr-btn rr-none" onclick="selectWinner(0)">لا أحد</button></div></div>
-<div class="winner-overlay" id="winnerModal"><div class="winner-crown">🏆</div><div class="winner-title">الفائز</div><div class="winner-name" id="winnerName">—</div><div class="winner-score" id="winnerScore">0 - 0</div><div class="winner-buttons"><button class="winner-btn winner-btn-main" id="rematchBtn">🔁 مباراة جديدة</button><button class="winner-btn winner-btn-new" id="homeBtn">🏠 الرئيسية</button></div></div>
-
+<main id="app"></main>
+<button class="btn fab" data-act="addExp">+ مصروف سريع</button>
+<nav>
+<button data-nav="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>الرئيسية</button>
+<button data-nav="lists"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>قوائمي</button>
+<button data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>الإعدادات</button>
+</nav>
 <script>
-// ======================== نظام إدارة اللعبة بدون Firebase ========================
-let game = {
-  p1: "لاعب 1",
-  p2: "لاعب 2",
-  p1Score: 0,
-  p2Score: 0,
-  roundTime: 10,
-  totalCards: 40,
-  cardsLeft: 40,
-  tableCards: 2,
-  round: 1
+const CUR={IQD:{d:0,s:'د.ع'},USD:{d:2,s:'$'},EUR:{d:2,s:'€'}};
+const COLORS=['#0e5a4a','#2f6fb5','#b5532f','#8a4fb0','#b08a1f','#c2375b'];
+const ICONS=['🏠','🚗','✈️','🛒','💼','📚','💍','🧾'];
+const CATS=['طعام','مواصلات','مواد','أدوات','أجور','فواتير','أخرى'];
+const $=s=>document.querySelector(s);
+let S={lists:[],expenses:[],settings:{theme:'auto',cur:'IQD'}};
+let V={tab:'home',list:null,q:'',sort:'upd',eq:'',esort:'date',arch:false,sheet:null};
+let KEY='myexp_v1';function loadS(){S={lists:[],expenses:[],settings:{theme:'auto',cur:'IQD'}};try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}applyTheme()}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٫,،]/g,'.').replace(/\s/g,'');
+const now=()=>Date.now();
+const today=()=>{const t=new Date();t.setMinutes(t.getMinutes()-t.getTimezoneOffset());return t.toISOString().slice(0,10)};
+const fd=i=>{const[y,m,d]=i.split('-');return d+'/'+m+'/'+y};
+function toMinor(str,c){str=norm(str);if(!/^\d*\.?\d*$/.test(str)||str===''||str==='.')return null;let[i,f='']=str.split('.');const d=CUR[c].d;f=(f+'0'.repeat(d)).slice(0,d);return Number((i||'0')+f)}
+function fmt(m,c){const d=CUR[c].d,p=10**d;let s=Math.floor(m/p).toLocaleString('en-US');if(d)s+='.'+String(m%p).padStart(d,'0');return s+' '+CUR[c].s}
+function toInput(m,c){const d=CUR[c].d,p=10**d;return d?Math.floor(m/p)+'.'+String(m%p).padStart(d,'0'):String(m)}
+function totals(a){const t={};a.forEach(x=>t[x.cur]=(t[x.cur]||0)+x.amt);return t}
+const totHTML=(t,big)=>{const k=Object.keys(t);if(!k.length)return `<span class="mute">لا توجد مصروفات</span>`;return k.map(c=>`<div class="${big?'big':''}"><span class="num">${fmt(t[c],c)}</span></div>`).join('')};
+const listExp=id=>S.expenses.filter(e=>e.list===id);
+const getList=id=>S.lists.find(l=>l.id===id);
+const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),1800)};
+
+function applyTheme(){const t=S.settings.theme;if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t)}
+
+function listCard(l){const ex=listExp(l.id);return `<div class="card item row" data-act="open" data-id="${l.id}"><div class="ico" style="background:${l.color}22">${l.icon}</div><div class="grow"><b>${l.pin?'<span class="pin">● </span>':''}${esc(l.name)}</b><div class="mute"><span class="num">${ex.length}</span> مصروف · بدأت <span class="num">${fd(l.start)}</span></div></div><div style="text-align:end">${totHTML(totals(ex))}</div></div>`}
+function expRow(e,showList){const l=getList(e.list);return `<div class="card item row" data-act="expMenu" data-id="${e.id}"><div class="grow"><b>${esc(e.name)}</b><div class="mute"><span class="num">${fd(e.date)}</span>${e.time?' <span class="num">'+e.time+'</span>':''}${e.cat?' · '+esc(e.cat):''}${showList&&l?' · '+esc(l.name):''}</div></div><div><span class="num">${fmt(e.amt,e.cur)}</span></div></div>`}
+
+function render(){
+const a=$('#app');let h='';
+const gate=FB_READY&&!USER;document.querySelector('nav').style.display=document.querySelector('.fab').style.display=gate?'none':'';
+if(FB_READY&&!AUTHREADY){a.innerHTML='<div class="empty">'+(FBERR?esc(FBERR):'جاري التحميل…')+'</div>';return}
+if(gate){a.innerHTML=authView();return}
+const active=S.lists.filter(l=>!l.arch);
+document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.nav===V.tab&&!V.list));
+if(V.list){const l=getList(V.list);if(!l){V.list=null;return render()}
+let ex=listExp(l.id);const q=V.eq.trim().toLowerCase();if(q)ex=ex.filter(e=>(e.name+' '+(e.desc||'')+' '+(e.cat||'')).toLowerCase().includes(q));
+ex.sort(V.esort==='amt'?(x,y)=>y.amt-x.amt:(x,y)=>(y.date+(y.time||'')).localeCompare(x.date+(x.time||'')));
+h=`<button class="back" data-act="back">‹ قوائمي</button><div class="row"><div class="ico" style="background:${l.color}22">${l.icon}</div><div class="grow"><h1 style="margin:0">${esc(l.name)}</h1></div><button class="btn sec" data-act="listMenu">خيارات</button></div>${l.desc?`<p class="mute">${esc(l.desc)}</p>`:''}
+<div class="card" style="margin-top:12px"><div class="mute">المجموع · <span class="num">${listExp(l.id).length}</span> مصروف${l.end?' · حتى <span class="num">'+fd(l.end)+'</span>':''}</div>${totHTML(totals(listExp(l.id)),1)}</div>
+<div class="bar"><input id="eq" placeholder="بحث في المصروفات" value="${esc(V.eq)}"><select id="esort" style="width:auto"><option value="date">الأحدث</option><option value="amt" ${V.esort==='amt'?'selected':''}>الأكبر مبلغًا</option></select></div>
+${ex.length?ex.map(e=>expRow(e)).join(''):`<div class="empty">${V.eq?'لا توجد نتائج':'لم تُسجَّل مصروفات بعد. اضغط «مصروف سريع» لإضافة أول مصروف.'}</div>`}`}
+else if(V.tab==='home'){const all=S.expenses.filter(e=>{const l=getList(e.list);return l&&!l.arch});const rec=[...all].sort((x,y)=>(y.date+(y.time||'')).localeCompare(x.date+(x.time||''))).slice(0,5);
+h=`<h1>مصاريفي</h1>${verifyBanner()}<div class="card"><div class="mute">مجموع كل القوائم النشطة (لكل عملة على حدة)</div>${totHTML(totals(all),1)}</div>
+${S.lists.length?'':`<div class="empty">ابدأ بإنشاء قائمة لتسجيل مصروفاتك.<br><br><button class="btn" data-act="addList">إنشاء قائمة</button></div>`}
+${active.some(l=>l.pin)?'<h2>القوائم المثبتة</h2>'+active.filter(l=>l.pin).map(listCard).join(''):''}
+${rec.length?'<h2>آخر المصروفات</h2>'+rec.map(e=>expRow(e,1)).join(''):''}`}
+else if(V.tab==='lists'){let ls=S.lists.filter(l=>!!l.arch===V.arch);const q=V.q.trim().toLowerCase();if(q)ls=ls.filter(l=>l.name.toLowerCase().includes(q));
+const tt=l=>Object.values(totals(listExp(l.id))).reduce((a,b)=>a+b,0);
+ls.sort((x,y)=>(y.pin?1:0)-(x.pin?1:0)||(V.sort==='name'?x.name.localeCompare(y.name,'ar'):V.sort==='total'?tt(y)-tt(x):V.sort==='start'?y.start.localeCompare(x.start):y.upd-x.upd));
+h=`<h1>${V.arch?'القوائم المؤرشفة':'قوائمي'}</h1><div class="bar"><input id="lq" placeholder="بحث" value="${esc(V.q)}"><select id="lsort" style="width:auto"><option value="upd">آخر تعديل</option><option value="name" ${V.sort==='name'?'selected':''}>الاسم</option><option value="start" ${V.sort==='start'?'selected':''}>تاريخ البداية</option><option value="total" ${V.sort==='total'?'selected':''}>المجموع</option></select></div>
+${ls.length?ls.map(listCard).join(''):`<div class="empty">${V.arch?'لا توجد قوائم مؤرشفة':'لا توجد قوائم.'}</div>`}
+<div class="btns">${V.arch?'':'<button class="btn" data-act="addList">قائمة جديدة</button>'}<button class="btn sec" data-act="toggleArch">${V.arch?'العودة للقوائم':'المؤرشفة'}</button></div>`}
+else{const s=S.settings;h=`<h1>الإعدادات</h1>${accountCard()}<div class="card"><label style="margin-top:0">المظهر</label><select id="theme"><option value="auto">حسب الجهاز</option><option value="light" ${s.theme==='light'?'selected':''}>فاتح</option><option value="dark" ${s.theme==='dark'?'selected':''}>داكن</option></select>
+<label>العملة الافتراضية</label><select id="dcur">${Object.keys(CUR).map(c=>`<option ${s.cur===c?'selected':''}>${c}</option>`).join('')}</select></div>
+<div class="card mute">الأرقام تظهر بالإنجليزية دائمًا. البيانات محفوظة في هذا المتصفح فقط حاليًا، ولا تُرسل إلى أي خادم. المزامنة والتشفير في مراحل لاحقة.</div>`}
+a.innerHTML=h}
+
+function sheet(h){V.sheet=h;let b=document.querySelector('.sheetbg');if(!b){b=document.createElement('div');b.className='sheetbg';document.body.appendChild(b)}b.innerHTML=`<div class="sheet">${h}</div>`;b.onclick=e=>{if(e.target===b)closeSheet()}}
+function closeSheet(){const b=document.querySelector('.sheetbg');if(b)b.remove()}
+function confirmBox(msg,fn){sheet(`<p>${msg}</p><div class="btns"><button class="btn dng grow" id="yes">تأكيد الحذف</button><button class="btn sec grow" data-act="close">إلغاء</button></div>`);$('#yes').onclick=()=>{closeSheet();fn()}}
+
+let pick={color:COLORS[0],icon:ICONS[0]};
+function listForm(l){pick={color:l?l.color:COLORS[0],icon:l?l.icon:ICONS[0]};
+sheet(`<h1>${l?'تعديل القائمة':'قائمة جديدة'}</h1><label style="margin-top:0">الاسم</label><input id="ln" maxlength="60" value="${esc(l?.name)}"><label>الوصف (اختياري)</label><input id="ld" maxlength="200" value="${esc(l?.desc)}">
+<label>الأيقونة</label><div class="sw" id="sic">${ICONS.map(i=>`<button data-pi="${i}" class="${i===pick.icon?'on':''}">${i}</button>`).join('')}</div>
+<label>اللون</label><div class="sw" id="sco">${COLORS.map(c=>`<button data-pc="${c}" style="background:${c}" class="${c===pick.color?'on':''}"></button>`).join('')}</div>
+<div class="two"><div><label>تاريخ البداية</label><input type="date" id="ls" value="${l?.start||today()}"></div><div><label>تاريخ النهاية (اختياري)</label><input type="date" id="le" value="${l?.end||''}"></div></div>
+<div class="btns"><button class="btn grow" id="sv">حفظ</button><button class="btn sec grow" data-act="close">إلغاء</button></div>`);
+$('#sic').onclick=e=>{const b=e.target.closest('[data-pi]');if(b){pick.icon=b.dataset.pi;[...$('#sic').children].forEach(x=>x.classList.toggle('on',x===b))}};
+$('#sco').onclick=e=>{const b=e.target.closest('[data-pc]');if(b){pick.color=b.dataset.pc;[...$('#sco').children].forEach(x=>x.classList.toggle('on',x===b))}};
+$('#sv').onclick=()=>{const name=$('#ln').value.trim();if(!name)return toast('اكتب اسم القائمة');const st=$('#ls').value||today(),en=$('#le').value;if(en&&en<st)return toast('تاريخ النهاية قبل البداية');
+const o={name,desc:$('#ld').value.trim(),icon:pick.icon,color:pick.color,start:st,end:en,upd:now()};
+if(l)Object.assign(l,o);else S.lists.push(Object.assign({id:uid(),created:now(),pin:false,arch:false},o));save();closeSheet();render();toast('تم الحفظ')}}
+
+function expForm(e,lid){if(!S.lists.length){toast('أنشئ قائمة أولًا');V.tab='lists';V.list=null;render();return listForm()}
+const act=S.lists.filter(l=>!l.arch||l.id===e?.list);const sel=e?.list||lid||V.list||act[0]?.id;const cur=e?.cur||S.settings.cur;
+sheet(`<h1>${e?'تعديل المصروف':'مصروف جديد'}</h1><label style="margin-top:0">القائمة</label><select id="el">${act.map(l=>`<option value="${l.id}" ${l.id===sel?'selected':''}>${l.icon} ${esc(l.name)}</option>`).join('')}</select>
+<label>اسم المصروف</label><input id="en" maxlength="80" value="${esc(e?.name)}">
+<div class="two"><div><label>المبلغ</label><input id="ea" inputmode="decimal" autocomplete="off" dir="ltr" placeholder="0" value="${e?toInput(e.amt,e.cur):''}"></div><div><label>العملة</label><select id="ec">${Object.keys(CUR).map(c=>`<option ${c===cur?'selected':''}>${c}</option>`).join('')}</select></div></div>
+<div class="two"><div><label>التاريخ</label><input type="date" id="ed" value="${e?.date||today()}"></div><div><label>الوقت (اختياري)</label><input type="time" id="et" value="${e?.time||''}"></div></div>
+<label>التصنيف</label><input id="ek" list="cats" maxlength="40" value="${esc(e?.cat)}"><datalist id="cats">${CATS.map(c=>`<option value="${c}">`).join('')}</datalist>
+<label>الوصف</label><input id="eds" maxlength="200" value="${esc(e?.desc)}"><label>ملاحظات</label><textarea id="eno" rows="2" maxlength="500">${esc(e?.note)}</textarea>
+<div class="btns"><button class="btn grow" id="sv">حفظ</button><button class="btn sec grow" data-act="close">إلغاء</button></div>`);
+const ai=$('#ea');ai.oninput=()=>{let v=norm(ai.value).replace(/[^0-9.]/g,'');const p=v.split('.');ai.value=p.length>1?p[0]+'.'+p.slice(1).join(''):v};
+$('#sv').onclick=()=>{const name=$('#en').value.trim(),c=$('#ec').value,m=toMinor($('#ea').value,c);if(!name)return toast('اكتب اسم المصروف');if(m===null||m<=0)return toast('أدخل مبلغًا صحيحًا');if(!Number.isSafeInteger(m))return toast('المبلغ كبير جدًا');
+const o={list:$('#el').value,name,amt:m,cur:c,date:$('#ed').value||today(),time:$('#et').value,cat:$('#ek').value.trim(),desc:$('#eds').value.trim(),note:$('#eno').value.trim(),upd:now()};
+if(e)Object.assign(e,o);else S.expenses.push(Object.assign({id:uid(),created:now()},o));const l=getList(o.list);if(l)l.upd=now();save();closeSheet();render();toast('تم الحفظ')}}
+
+const A={
+addList:()=>listForm(),addExp:()=>expForm(null,V.list),close:closeSheet,
+open:t=>{V.list=t.dataset.id;V.eq='';window.scrollTo(0,0);render()},back:()=>{V.list=null;V.tab='lists';render()},
+toggleArch:()=>{V.arch=!V.arch;render()},
+expMenu:t=>{const e=S.expenses.find(x=>x.id===t.dataset.id);sheet(`<h1>${esc(e.name)}</h1><div class="big"><span class="num">${fmt(e.amt,e.cur)}</span></div><p class="mute"><span class="num">${fd(e.date)}</span>${e.cat?' · '+esc(e.cat):''}</p>${e.desc?`<p>${esc(e.desc)}</p>`:''}${e.note?`<p class="mute">${esc(e.note)}</p>`:''}
+<div class="btns"><button class="btn grow" data-act="expEdit" data-id="${e.id}">تعديل</button><button class="btn sec grow" data-act="expCopy" data-id="${e.id}">نسخ</button><button class="btn dng grow" data-act="expDel" data-id="${e.id}">حذف</button></div>`)},
+expEdit:t=>expForm(S.expenses.find(x=>x.id===t.dataset.id)),
+expCopy:t=>{const e=S.expenses.find(x=>x.id===t.dataset.id);S.expenses.push({...e,id:uid(),created:now(),upd:now()});save();closeSheet();render();toast('تم النسخ')},
+expDel:t=>{const id=t.dataset.id;confirmBox('حذف هذا المصروف نهائيًا؟',()=>{S.expenses=S.expenses.filter(x=>x.id!==id);save();render();toast('تم الحذف')})},
+listMenu:()=>{const l=getList(V.list);sheet(`<h1>خيارات القائمة</h1><div class="btns" style="flex-direction:column"><button class="btn sec" data-act="lEdit">تعديل</button><button class="btn sec" data-act="lPin">${l.pin?'إلغاء التثبيت':'تثبيت'}</button><button class="btn sec" data-act="lDup">نسخ القائمة مع مصروفاتها</button><button class="btn sec" data-act="lArch">${l.arch?'استعادة من الأرشيف':'أرشفة'}</button><button class="btn dng" data-act="lDel">حذف القائمة</button></div>`)},
+lEdit:()=>listForm(getList(V.list)),
+lPin:()=>{const l=getList(V.list);l.pin=!l.pin;l.upd=now();save();closeSheet();render()},
+lArch:()=>{const l=getList(V.list);l.arch=!l.arch;l.upd=now();save();closeSheet();V.list=null;V.tab='lists';render();toast(l.arch?'تمت الأرشفة':'تمت الاستعادة')},
+lDup:()=>{const l=getList(V.list),id=uid();S.lists.push({...l,id,name:l.name+' (نسخة)',pin:false,created:now(),upd:now()});listExp(l.id).forEach(e=>S.expenses.push({...e,id:uid(),list:id}));save();closeSheet();render();toast('تم نسخ القائمة')},
+lDel:()=>{const l=getList(V.list);confirmBox(`حذف «${esc(l.name)}» وكل مصروفاتها (${listExp(l.id).length}) نهائيًا؟`,()=>{S.expenses=S.expenses.filter(e=>e.list!==l.id);S.lists=S.lists.filter(x=>x.id!==l.id);save();V.list=null;V.tab='lists';render();toast('تم الحذف')})}
 };
-
-let timerRaf = null;
-let countdownInterval = null;
-
-// إحصائيات اللاعب الحالي (محلية)
-let playerStats = {
-  matches: 0,
-  wins: 0,
-  maxPoints: 0
-};
-
-let recentMatches = [];
-
-// ======================== تحميل وحفظ الإحصائيات محلياً ========================
-function loadStats() {
-  const saved = localStorage.getItem("referee_stats");
-  if(saved) {
-    try {
-      const st = JSON.parse(saved);
-      playerStats = st;
-    } catch(e) {}
-  }
-  updateStatsUI();
-  loadRecentMatches();
-}
-function saveStats() {
-  localStorage.setItem("referee_stats", JSON.stringify(playerStats));
-  updateStatsUI();
-}
-function updateStatsUI() {
-  document.getElementById('statMatches').innerText = playerStats.matches;
-  document.getElementById('statWins').innerText = playerStats.wins;
-  document.getElementById('statPoints').innerText = playerStats.maxPoints;
-}
-function loadRecentMatches() {
-  const rec = localStorage.getItem("referee_matches");
-  if(rec) recentMatches = JSON.parse(rec);
-  else recentMatches = [];
-  const container = document.getElementById('recent-list');
-  if(recentMatches.length === 0) { container.innerHTML = '<div class="recent-item">لا توجد مباريات بعد</div>'; return; }
-  container.innerHTML = '';
-  recentMatches.slice(0,5).forEach(m => {
-    const div = document.createElement('div'); div.className = 'recent-item';
-    div.innerHTML = `<span>${m.p1} vs ${m.p2}</span><span>${m.score}</span>`;
-    container.appendChild(div);
-  });
-}
-function addMatchToHistory(p1, p2, scoreStr, winnerName, winnerPoints) {
-  recentMatches.unshift({ p1, p2, score: scoreStr });
-  if(recentMatches.length > 10) recentMatches.pop();
-  localStorage.setItem("referee_matches", JSON.stringify(recentMatches));
-  loadRecentMatches();
-  // تحديث الإحصائيات
-  playerStats.matches++;
-  if(winnerName === getCurrentPlayerName()) playerStats.wins++;
-  if(winnerPoints > playerStats.maxPoints) playerStats.maxPoints = winnerPoints;
-  saveStats();
-}
-function getCurrentPlayerName() {
-  let name = localStorage.getItem("referee_user");
-  if(!name) name = "اللاعب";
-  return name;
-}
-
-// ======================== الأصوات والتعليقات العراقية ========================
-function playBeep() {
-  try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value = 880; g.gain.value = 0.2; g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25); o.start(); o.stop(ctx.currentTime + 0.25); } catch(e){} 
-}
-function playWhistle() {
-  try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const t = ctx.currentTime; const o1 = ctx.createOscillator(); const g1 = ctx.createGain(); o1.connect(g1); g1.connect(ctx.destination); o1.frequency.setValueAtTime(980, t); o1.frequency.linearRampToValueAtTime(1180, t + 0.2); g1.gain.value = 0.3; g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.4); o1.start(t); o1.stop(t + 0.4); const o2 = ctx.createOscillator(); const g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.frequency.setValueAtTime(1180, t + 0.25); o2.frequency.linearRampToValueAtTime(980, t + 0.5); g2.gain.value = 0.25; g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.6); o2.start(t + 0.25); o2.stop(t + 0.6); } catch(e){} 
-}
-function playWinFanfare() {
-  try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const t = ctx.currentTime; [[523,0],[659,0.12],[784,0.24],[1047,0.38]].forEach(([freq,delay])=>{ const o=ctx.createOscillator(); const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value=freq; g.gain.value=0.25; g.gain.exponentialRampToValueAtTime(0.0001, t+delay+0.35); o.start(t+delay); o.stop(t+delay+0.35); }); } catch(e){} 
-}
-function iraqiCongrats(winnerName) {
-  const msgs = [
-    `🎉 مبروك ${winnerName}! أهو أنت الزلم! 💪`,
-    `🔥 ${winnerName} فاز بالكيم! شو هلعب رهيب!`,
-    `🏆 سلامات ${winnerName}! روح جيب كاسة الشاي 🍵`,
-    `⚡ يا سلام! ${winnerName} أبطال أوروبا جان ويهة`,
-    `🃏 ${winnerName} أكل الكروت كلها! فدوة الك`
-  ];
-  const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
-  const toast = document.createElement('div');
-  toast.innerText = randomMsg;
-  toast.style.position = 'fixed';
-  toast.style.bottom = '100px';
-  toast.style.left = '20px';
-  toast.style.right = '20px';
-  toast.style.background = '#1e2a1e';
-  toast.style.color = '#ffd600';
-  toast.style.padding = '16px';
-  toast.style.borderRadius = '60px';
-  toast.style.textAlign = 'center';
-  toast.style.fontWeight = 'bold';
-  toast.style.fontFamily = 'Cairo, sans-serif';
-  toast.style.fontSize = '18px';
-  toast.style.zIndex = '300';
-  toast.style.border = '1px solid gold';
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-}
-
-// ======================== دوال التحكم ========================
-function showPage(id) { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function switchTab(t) { document.getElementById('login-form').classList.toggle('active', t==='login'); document.getElementById('register-form').classList.toggle('active', t==='register'); }
-function handleLogin() { let name = document.getElementById('login-name').value.trim(); if(name) localStorage.setItem("referee_user", name); showHome(); }
-function handleRegister() { let name = document.getElementById('reg-name').value.trim(); if(name) localStorage.setItem("referee_user", name); showHome(); }
-function logout() { showPage('auth-page'); }
-function showHome() { loadStats(); showPage('home-page'); }
-function showSetup() { showPage('setup-page'); document.getElementById('cardsTotal').innerText = game.totalCards; }
-function setLevel(sec, el) { document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); game.roundTime = sec; }
-function changeCards(delta) { let val = Math.max(10, Math.min(200, game.totalCards + delta)); game.totalCards = val; document.getElementById('cardsTotal').innerText = val; }
-
-function initGame() {
-  game.p1 = document.getElementById('p1-name').value.trim() || 'لاعب 1';
-  game.p2 = document.getElementById('p2-name').value.trim() || 'لاعب 2';
-  game.p1Score = 0; game.p2Score = 0;
-  game.cardsLeft = game.totalCards;
-  game.tableCards = 2;
-  game.round = 1;
-  updateGameUI();
-  showPage('game-page');
-  document.getElementById('startOverlay').classList.remove('hidden');
-  document.getElementById('timerDisplay').style.display = 'none';
-  document.getElementById('countdownOverlay').style.display = 'none';
-  if(timerRaf) cancelAnimationFrame(timerRaf);
-}
-
-function updateGameUI() {
-  document.getElementById('p1Name').innerText = game.p1;
-  document.getElementById('p2Name').innerText = game.p2;
-  document.getElementById('p1Points').innerText = game.p1Score;
-  document.getElementById('p2Points').innerText = game.p2Score;
-  document.getElementById('roundNum').innerText = game.round;
-  document.getElementById('tableCards').innerText = game.tableCards;
-  document.getElementById('remainingText').innerHTML = `متبقي: ${game.cardsLeft}`;
-  document.getElementById('modalP1Btn').innerHTML = `🟢 ${game.p1}`;
-  document.getElementById('modalP2Btn').innerHTML = `🟠 ${game.p2}`;
-  document.getElementById('modalPot').innerText = game.tableCards;
-}
-
-function stopTimer() { if(timerRaf) cancelAnimationFrame(timerRaf); if(countdownInterval) clearInterval(countdownInterval); timerRaf = null; }
-
-function startRound() {
-  document.getElementById('startOverlay').classList.add('hidden');
-  document.getElementById('timerDisplay').style.display = 'flex';
-  document.getElementById('countdownOverlay').style.display = 'flex';
-  let cnt = 3;
-  document.getElementById('countdownOverlay').innerText = cnt;
-  playBeep();
-  countdownInterval = setInterval(() => {
-    cnt--;
-    if(cnt <= 0) {
-      clearInterval(countdownInterval);
-      document.getElementById('countdownOverlay').style.display = 'none';
-      startTimer();
-    } else {
-      document.getElementById('countdownOverlay').innerText = cnt;
-      playBeep();
-    }
-  }, 1000);
-}
-
-function startTimer() {
-  let remaining = game.roundTime;
-  const total = game.roundTime;
-  const ring = document.getElementById('timerRing');
-  const displaySpan = document.getElementById('timerDisplay');
-  const circumference = 276.46;
-  const startTime = performance.now();
-  displaySpan.innerText = remaining;
-  ring.style.strokeDashoffset = '0';
-  function tick(now) {
-    const elapsed = (now - startTime) / 1000;
-    const left = Math.max(0, total - elapsed);
-    const offset = circumference * (1 - left/total);
-    ring.style.strokeDashoffset = offset;
-    const secLeft = Math.ceil(left);
-    if(parseInt(displaySpan.innerText) !== secLeft) {
-      displaySpan.innerText = secLeft;
-      let color = secLeft/total > 0.5 ? '#00e676' : (secLeft/total > 0.25 ? '#ffd600' : '#ff1744');
-      document.documentElement.style.setProperty('--timer-color', color);
-      ring.style.stroke = color;
-    }
-    if(left <= 0) {
-      ring.style.strokeDashoffset = circumference;
-      displaySpan.innerText = '0';
-      onTimerEnd();
-      return;
-    }
-    timerRaf = requestAnimationFrame(tick);
-  }
-  if(timerRaf) cancelAnimationFrame(timerRaf);
-  timerRaf = requestAnimationFrame(tick);
-}
-
-function onTimerEnd() {
-  playWhistle();
-  stopTimer();
-  document.getElementById('roundModal').classList.add('show');
-}
-
-function selectWinner(winner) { document.getElementById('roundModal').classList.remove('show'); processWinner(winner); }
-function awardWinner(winner) { if(document.getElementById('roundModal').classList.contains('show')) return; processWinner(winner); }
-
-function processWinner(winner) {
-  if(winner === 1) { game.p1Score += game.tableCards; game.cardsLeft -= game.tableCards; game.tableCards = 2; }
-  else if(winner === 2) { game.p2Score += game.tableCards; game.cardsLeft -= game.tableCards; game.tableCards = 2; }
-  else { let add = Math.min(2, game.cardsLeft); game.tableCards += add; game.cardsLeft -= add; }
-  game.round++;
-  updateGameUI();
-  
-  // الشروط: انتهاء الكروت
-  if(game.cardsLeft <= 0 && game.tableCards <= 0) endMatch();
-  else if(game.cardsLeft < 0) game.cardsLeft = 0;
-  else { document.getElementById('startOverlay').classList.remove('hidden'); document.getElementById('timerDisplay').style.display = 'none'; }
-}
-
-function forceEndGame() { if(confirm("إنهاء المباراة قبل انتهاء الكروت؟")) endMatch(); }
-
-function endMatch() {
-  stopTimer();
-  let winnerName = "";
-  let isDraw = false;
-  let winnerPoints = 0;
-  if(game.p1Score > game.p2Score) { winnerName = game.p1; winnerPoints = game.p1Score; }
-  else if(game.p2Score > game.p1Score) { winnerName = game.p2; winnerPoints = game.p2Score; }
-  else { winnerName = "تعادل"; isDraw = true; winnerPoints = game.p1Score; }
-  
-  document.getElementById('winnerName').innerText = winnerName;
-  document.getElementById('winnerScore').innerHTML = `${game.p1} ${game.p1Score}  -  ${game.p2Score} ${game.p2}`;
-  document.getElementById('winnerModal').classList.add('show');
-  playWinFanfare();
-  if(!isDraw) iraqiCongrats(winnerName);
-  
-  // حفظ الإحصائيات
-  addMatchToHistory(game.p1, game.p2, `${game.p1Score}-${game.p2Score}`, winnerName, winnerPoints);
-}
-
-document.getElementById('rematchBtn').onclick = () => {
-  document.getElementById('winnerModal').classList.remove('show');
-  game.p1Score = 0; game.p2Score = 0;
-  game.cardsLeft = game.totalCards;
-  game.tableCards = 2;
-  game.round = 1;
-  updateGameUI();
-  document.getElementById('startOverlay').classList.remove('hidden');
-  document.getElementById('timerDisplay').style.display = 'none';
-};
-document.getElementById('homeBtn').onclick = () => { document.getElementById('winnerModal').classList.remove('show'); showHome(); };
-
-function pauseGame() {
-  if(timerRaf) {
-    cancelAnimationFrame(timerRaf);
-    timerRaf = null;
-    let remaining = parseInt(document.getElementById('timerDisplay').innerText);
-    document.getElementById('pauseBtn').innerText = '▶ متابعة';
-    document.getElementById('pauseBtn').onclick = () => resumeGame(remaining);
-  }
-}
-function resumeGame(remainingVal) {
-  document.getElementById('pauseBtn').innerText = '⏸ إيقاف';
-  document.getElementById('pauseBtn').onclick = pauseGame;
-  let remaining = remainingVal;
-  const total = game.roundTime;
-  const ring = document.getElementById('timerRing');
-  const displaySpan = document.getElementById('timerDisplay');
-  const circumference = 276.46;
-  const resumeTime = performance.now();
-  function tick(now) {
-    const elapsed = (now - resumeTime) / 1000;
-    const left = Math.max(0, remaining - elapsed);
-    const offset = circumference * (1 - left/total);
-    ring.style.strokeDashoffset = offset;
-    const secLeft = Math.ceil(left);
-    if(parseInt(displaySpan.innerText) !== secLeft) {
-      displaySpan.innerText = secLeft;
-      let color = secLeft/total > 0.5 ? '#00e676' : (secLeft/total > 0.25 ? '#ffd600' : '#ff1744');
-      ring.style.stroke = color;
-    }
-    if(left <= 0) {
-      ring.style.strokeDashoffset = circumference;
-      displaySpan.innerText = '0';
-      onTimerEnd();
-      return;
-    }
-    timerRaf = requestAnimationFrame(tick);
-  }
-  timerRaf = requestAnimationFrame(tick);
-}
-
-// تحميل الإحصائيات عند بدء التطبيق
-loadStats();
+// ===== Firebase: ألصق إعدادات مشروعك هنا (إعدادات الويب ليست سرية؛ الحماية الفعلية من Security Rules) =====
+const FIREBASE_CONFIG={apiKey:'',authDomain:'',projectId:'',appId:''};
+const FB_READY=Object.values(FIREBASE_CONFIG).every(Boolean);
+let AUTHREADY=false,USER=null,FB=null,FBERR='';
+const AM={'auth/invalid-credential':'البريد أو كلمة المرور غير صحيحة','auth/email-already-in-use':'هذا البريد مسجّل مسبقًا','auth/weak-password':'كلمة المرور ضعيفة','auth/invalid-email':'البريد الإلكتروني غير صالح','auth/network-request-failed':'تعذر الاتصال بالإنترنت','auth/too-many-requests':'محاولات كثيرة، حاول لاحقًا','auth/popup-closed-by-user':'أُغلقت نافذة Google','auth/unauthorized-domain':'نطاق الموقع غير مضاف في Firebase Authorized domains'};
+async function fbInit(){if(!FB_READY)return;
+const B='https://www.gstatic.com/firebasejs/10.14.1/';
+const[app,auth,fs]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
+const a=app.initializeApp(FIREBASE_CONFIG);FB={auth,fs,au:auth.getAuth(a),db:fs.getFirestore(a)};
+auth.onAuthStateChanged(FB.au,async u=>{USER=u;KEY='myexp_v1_'+(u?u.uid:'anon');loadS();AUTHREADY=true;render();if(u){await ensureProfile(u);render()}})}
+async function ensureProfile(u){const{fs,db}=FB,r=fs.doc(db,'users',u.uid);
+try{const x=await fs.getDoc(r);if(x.exists())await fs.updateDoc(r,{lastLoginAt:fs.serverTimestamp()});else await fs.setDoc(r,{email:u.email||'',displayName:u.displayName||'',createdAt:fs.serverTimestamp(),lastLoginAt:fs.serverTimestamp(),encryptionVersion:0})}
+catch(e){toast('تعذر حفظ الملف الشخصي. تحقق من نشر قواعد Firestore')}}
+function authView(){const m=V.am||'login';const T={login:'تسجيل الدخول',signup:'حساب جديد',reset:'استعادة كلمة المرور'};
+return `<h1>${T[m]}</h1>${FBERR?`<div class="card" style="color:var(--danger)">${esc(FBERR)}</div>`:''}<div class="card"><label style="margin-top:0">البريد الإلكتروني</label><input id="au-e" type="email" dir="ltr" autocomplete="email">
+${m!=='reset'?`<label>كلمة المرور</label><input id="au-p" type="password" dir="ltr" autocomplete="${m==='login'?'current-password':'new-password'}">`:''}
+${m==='signup'?`<label>تأكيد كلمة المرور</label><input id="au-p2" type="password" dir="ltr" autocomplete="new-password"><p class="mute">8 أحرف على الأقل. سنستخدمها لاحقًا لحماية تشفير بياناتك، ولا يمكن لأحد استعادتها لك.</p>`:''}
+<div class="btns"><button class="btn grow" data-act="authGo">${m==='reset'?'إرسال رابط الاستعادة':T[m]}</button></div></div>
+${m!=='reset'?'<button class="btn sec full" data-act="google">المتابعة باستخدام Google</button>':''}
+<div class="btns" style="justify-content:center;flex-wrap:wrap">${m!=='login'?'<button class="back" data-act="amode" data-m="login">لدي حساب</button>':''}${m!=='signup'?'<button class="back" data-act="amode" data-m="signup">إنشاء حساب</button>':''}${m==='login'?'<button class="back" data-act="amode" data-m="reset">نسيت كلمة المرور؟</button>':''}</div>`}
+function verifyBanner(){if(!USER||USER.emailVerified||!USER.providerData.some(p=>p.providerId==='password'))return '';
+return `<div class="card"><b>فعّل بريدك الإلكتروني</b><p class="mute">أرسلنا رابط التحقق إلى <span class="num">${esc(USER.email)}</span>.</p><div class="btns" style="margin-top:0"><button class="btn sec grow" data-act="resend">إعادة الإرسال</button><button class="btn grow" data-act="reloadU">تم التفعيل</button></div></div>`}
+function accountCard(){if(!FB_READY)return `<div class="card"><b>الحساب</b><p class="mute">Firebase غير مربوط. أضف إعدادات مشروعك في FIREBASE_CONFIG أعلى الملف. يعمل التطبيق محليًا حتى ذلك الحين.</p></div>`;
+if(!USER)return '';return `<div class="card"><b>الحساب</b><p class="mute" style="margin:6px 0"><span class="num">${esc(USER.email||'')}</span> · ${USER.emailVerified?'البريد مُفعّل':'البريد غير مُفعّل'}</p><div class="btns" style="margin-top:8px"><button class="btn sec grow" data-act="resetPw">تغيير كلمة المرور</button><button class="btn dng grow" data-act="logout">تسجيل الخروج</button></div></div>`}
+Object.assign(A,{
+amode:t=>{V.am=t.dataset.m;render()},
+async authGo(){const e=$('#au-e').value.trim(),p=($('#au-p')||{}).value||'',m=V.am||'login',{auth,au}=FB;
+try{if(m==='reset'){await auth.sendPasswordResetEmail(au,e);return toast('إن كان البريد مسجّلًا فقد أُرسل رابط الاستعادة')}
+if(m==='signup'){if(p.length<8)return toast('كلمة المرور 8 أحرف على الأقل');if(p!==$('#au-p2').value)return toast('كلمتا المرور غير متطابقتين');const c=await auth.createUserWithEmailAndPassword(au,e,p);await auth.sendEmailVerification(c.user);toast('أُرسل رابط التحقق إلى بريدك')}
+else await auth.signInWithEmailAndPassword(au,e,p)}catch(x){toast(AM[x.code]||'تعذر إكمال العملية')}},
+async google(){try{await FB.auth.signInWithPopup(FB.au,new FB.auth.GoogleAuthProvider())}catch(x){toast(AM[x.code]||'تعذر تسجيل الدخول عبر Google')}},
+async resend(){try{await FB.auth.sendEmailVerification(USER);toast('أُعيد إرسال الرابط')}catch(x){toast(AM[x.code]||'حاول لاحقًا')}},
+async reloadU(){await USER.reload();render();if(USER.emailVerified)toast('تم تفعيل البريد')},
+async resetPw(){try{await FB.auth.sendPasswordResetEmail(FB.au,USER.email);toast('أُرسل رابط تغيير كلمة المرور')}catch(x){toast(AM[x.code]||'حاول لاحقًا')}},
+logout:()=>FB.auth.signOut(FB.au)});
+document.addEventListener('click',e=>{const n=e.target.closest('[data-nav]');if(n){V.tab=n.dataset.nav;V.list=null;V.arch=false;render();return}const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
+document.addEventListener('input',e=>{const i=e.target.id;if(i==='lq'){V.q=e.target.value;const p=e.target.selectionStart;render();const x=$('#lq');x.focus();x.setSelectionRange(p,p)}if(i==='eq'){V.eq=e.target.value;const p=e.target.selectionStart;render();const x=$('#eq');x.focus();x.setSelectionRange(p,p)}});
+document.addEventListener('change',e=>{const i=e.target.id;if(i==='lsort'){V.sort=e.target.value;render()}if(i==='esort'){V.esort=e.target.value;render()}if(i==='theme'){S.settings.theme=e.target.value;save();applyTheme()}if(i==='dcur'){S.settings.cur=e.target.value;save()}});
+loadS();render();fbInit().catch(e=>{FBERR='تعذر تحميل Firebase. تأكد من الاتصال ومن استضافة الملف على موقعك (وليس داخل معاينة).';AUTHREADY=true;render()});
 </script>
 </body>
 </html>
