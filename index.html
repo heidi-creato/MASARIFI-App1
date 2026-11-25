@@ -57,7 +57,8 @@ const $=s=>document.querySelector(s);
 let S={lists:[],expenses:[],settings:{theme:'auto',cur:'IQD'}};
 let V={tab:'home',list:null,q:'',sort:'upd',eq:'',esort:'date',arch:false,sheet:null};
 let KEY='myexp_v1';function loadS(){S={lists:[],expenses:[],settings:{theme:'auto',cur:'IQD'}};try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}applyTheme()}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let SYNC={on:false,ready:false,m:{},un:[],pend:{},cache:{},srv:{},leg:{lists:[],expenses:[]}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(SYNC.on?{settings:S.settings,lists:SYNC.leg.lists,expenses:SYNC.leg.expenses}:S))}catch(e){}if(SYNC.on)syncPush()};
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٫,،]/g,'.').replace(/\s/g,'');
@@ -83,6 +84,8 @@ const a=$('#app');let h='';
 const gate=FB_READY&&(!USER||!MK||!!V.rk);document.querySelector('nav').style.display=document.querySelector('.fab').style.display=gate?'none':'';
 if(FB_READY&&!AUTHREADY){a.innerHTML='<div class="empty">'+(FBERR?esc(FBERR):'جاري التحميل…')+'</div>';return}
 if(gate){a.innerHTML=!USER?authView():cryptoView();return}
+if(FB_READY&&USER&&MK&&!SYNC.on)startSync();
+if(SYNC.on&&!SYNC.ready){a.innerHTML='<div class="empty">جاري المزامنة…</div>';return}
 const active=S.lists.filter(l=>!l.arch);
 document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.nav===V.tab&&!V.list));
 if(V.list){const l=getList(V.list);if(!l){V.list=null;return render()}
@@ -106,7 +109,7 @@ ${ls.length?ls.map(listCard).join(''):`<div class="empty">${V.arch?'لا توج�
 else{const s=S.settings;h=`<h1>الإعدادات</h1>${accountCard()}${securityCard()}<div class="card"><label style="margin-top:0">المظهر</label><select id="theme"><option value="auto">حسب الجهاز</option><option value="light" ${s.theme==='light'?'selected':''}>فاتح</option><option value="dark" ${s.theme==='dark'?'selected':''}>داكن</option></select>
 <label>العملة الافتراضية</label><select id="dcur">${Object.keys(CUR).map(c=>`<option ${s.cur===c?'selected':''}>${c}</option>`).join('')}</select></div>
 <div class="card mute">الأرقام تظهر بالإنجليزية دائمًا. البيانات محفوظة في هذا المتصفح فقط حاليًا، ولا تُرسل إلى أي خادم. المزامنة والتشفير في مراحل لاحقة.</div>`}
-a.innerHTML=h}
+a.innerHTML=pill()+h}
 
 function sheet(h){V.sheet=h;let b=document.querySelector('.sheetbg');if(!b){b=document.createElement('div');b.className='sheetbg';document.body.appendChild(b)}b.innerHTML=`<div class="sheet">${h}</div>`;b.onclick=e=>{if(e.target===b)closeSheet()}}
 function closeSheet(){const b=document.querySelector('.sheetbg');if(b)b.remove()}
@@ -163,8 +166,8 @@ const AM={'auth/invalid-credential':'البريد أو كلمة المرور غ�
 async function fbInit(){if(!FB_READY)return;
 const B='https://www.gstatic.com/firebasejs/10.14.1/';
 const[app,auth,fs]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
-const a=app.initializeApp(FIREBASE_CONFIG);FB={auth,fs,au:auth.getAuth(a),db:fs.getFirestore(a)};
-auth.onAuthStateChanged(FB.au,async u=>{USER=u;MK=null;KR=null;KRDONE=false;V.rk=null;FBERR='';if(!u)LASTPW='';KEY='myexp_v1_'+(u?u.uid:'anon');loadS();AUTHREADY=true;render();if(u){await ensureProfile(u);try{await loadKR();if(KR){try{MK=await kget(u.uid)}catch(e){}}if(!MK&&LASTPW){await silentKeys(LASTPW);if(MK)LASTPW=''}}catch(e){FBERR=e&&e.code==='permission-denied'?'تعذر حفظ مفاتيح التشفير: قواعد Firestore غير محدّثة. انشر ملف firestore.rules الأحدث ثم أعد تحميل الصفحة':'تعذر إعداد مفاتيح التشفير. تحقق من الاتصال وحاول مرة أخرى'}render()}})}
+const a=app.initializeApp(FIREBASE_CONFIG);let db0;try{db0=fs.initializeFirestore(a,{localCache:fs.persistentLocalCache({tabManager:fs.persistentMultipleTabManager()})})}catch(e){db0=fs.getFirestore(a)}FB={auth,fs,au:auth.getAuth(a),db:db0};
+auth.onAuthStateChanged(FB.au,async u=>{stopSync();USER=u;MK=null;KR=null;KRDONE=false;V.rk=null;FBERR='';if(!u)LASTPW='';KEY='myexp_v1_'+(u?u.uid:'anon');loadS();AUTHREADY=true;render();if(u){await ensureProfile(u);try{await loadKR();if(KR){try{MK=await kget(u.uid)}catch(e){}}if(!MK&&LASTPW){await silentKeys(LASTPW);if(MK)LASTPW=''}}catch(e){FBERR=e&&e.code==='permission-denied'?'تعذر حفظ مفاتيح التشفير: قواعد Firestore غير محدّثة. انشر ملف firestore.rules الأحدث ثم أعد تحميل الصفحة':'تعذر إعداد مفاتيح التشفير. تحقق من الاتصال وحاول مرة أخرى'}render()}})}
 async function ensureProfile(u){const{fs,db}=FB,r=fs.doc(db,'users',u.uid);
 try{const x=await fs.getDoc(r);if(x.exists())await fs.updateDoc(r,{lastLoginAt:fs.serverTimestamp()});else await fs.setDoc(r,{email:u.email||'',displayName:u.displayName||'',createdAt:fs.serverTimestamp(),lastLoginAt:fs.serverTimestamp(),encryptionVersion:0})}
 catch(e){toast('تعذر حفظ الملف الشخصي. تحقق من نشر قواعد Firestore')}}
@@ -310,6 +313,38 @@ return run('جاري إنشاء التقرير…',async()=>{let f=RC[sig];if(!f
 if(m==='share'&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:l.name});return}catch(e){if(e.name==='AbortError')return;if(e.name==='NotAllowedError')return toast('الملف جاهز. اضغط مشاركة مرة أخرى')}}
 const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);if(m==='share')toast('المشاركة غير مدعومة هنا، تم التنزيل')})}
 });
+// ===== المزامنة بين الأجهزة: Firestore مع كاش محلي مشفّر يعمل دون اتصال =====
+const SCOLS=['expenseLists','expenses'];
+const freshSync=()=>({on:false,ready:false,m:{},q:Promise.resolve(),pq:{},un:[],pend:{},cache:{},srv:{},err:false,bad:0,leg:{lists:[],expenses:[]}});
+const arrOf=c=>c==='expenses'?S.expenses:S.lists;
+function stopSync(){try{SYNC.un.forEach(u=>u())}catch(e){}clearTimeout(SYNC.tm);SYNC=freshSync()}
+function syncLabel(){const p=SYNC.pend.expenses||SYNC.pend.expenseLists,c=SYNC.cache.expenses||SYNC.cache.expenseLists;if(!navigator.onLine||SYNC.err)return p?'توجد تغييرات لم تتم مزامنتها':'تعذر الاتصال';return p||c?'جاري المزامنة':'تمت المزامنة'}
+const pill=()=>SYNC.on&&SYNC.ready?`<div id="syncpill" class="mute" style="text-align:end;font-size:12px">● ${syncLabel()}</div>`:'';
+const updPill=()=>{const e=$('#syncpill');if(e)e.textContent='● '+syncLabel()};
+addEventListener('online',updPill);addEventListener('offline',updPill);
+function clearLeg(){if(SYNC.leg.lists.length||SYNC.leg.expenses.length){SYNC.leg={lists:[],expenses:[]};try{localStorage.setItem(KEY,JSON.stringify({settings:S.settings}))}catch(e){}}}
+function syncReady(){if(SYNC.ready)return;clearTimeout(SYNC.tm);SYNC.ready=true;syncPush();render()}
+async function handleSnap(col,snap){let changed=false;
+for(const ch of snap.docChanges()){const arr=arrOf(col),id=ch.doc.id,k=col+'/'+id,i=arr.findIndex(x=>x.id===id);
+if(ch.type==='removed'){if(i>=0){arr.splice(i,1);changed=true}delete SYNC.m[k];continue}
+if(ch.doc.metadata.hasPendingWrites&&i>=0)continue;
+let r;try{r=await dec(ch.doc.data().encryptedPayload,col,id)}catch(e){SYNC.bad++;continue}
+const j=JSON.stringify(r);SYNC.m[k]=j;
+if(i<0){arr.push(r);changed=true}else if(JSON.stringify(arr[i])!==j){const o=arr[i];Object.keys(o).forEach(x=>delete o[x]);Object.assign(o,r);changed=true}}
+SYNC.pend[col]=snap.metadata.hasPendingWrites;SYNC.cache[col]=snap.metadata.fromCache;
+if(!snap.metadata.fromCache){SYNC.srv[col]=true;SYNC.err=false}
+if(!SYNC.ready){if(SYNC.srv.expenseLists&&SYNC.srv.expenses)syncReady()}else{if(changed)render();updPill()}}
+function startSync(){const{fs,db}=FB;SYNC=freshSync();SYNC.on=true;SYNC.leg={lists:S.lists.slice(),expenses:S.expenses.slice()};
+SCOLS.forEach(col=>{SYNC.pq[col]=Promise.resolve();
+SYNC.un.push(fs.onSnapshot(fs.collection(db,'users',USER.uid,col),{includeMetadataChanges:true},snap=>{SYNC.pq[col]=SYNC.pq[col].then(()=>handleSnap(col,snap)).catch(()=>{})},e=>{SYNC.err=true;updPill();if(e&&e.code==='permission-denied')toast('تعذرت المزامنة: تحقق من قواعد Firestore');syncReady()}))});
+SYNC.tm=setTimeout(syncReady,6000)}
+function syncPush(){if(!SYNC.on||!SYNC.ready)return;
+SYNC.q=SYNC.q.then(async()=>{const{fs,db}=FB,cur={},ps=[];
+for(const col of SCOLS)for(const r of arrOf(col)){const k=col+'/'+r.id,j=JSON.stringify(r);cur[k]=1;if(SYNC.m[k]===j)continue;SYNC.m[k]=j;
+ps.push(fs.setDoc(fs.doc(db,'users',USER.uid,col,r.id),{encryptedPayload:await enc(r,col,r.id),encryptionVersion:1,createdAt:r.created||Date.now(),updatedAt:r.upd||Date.now()}))}
+for(const k of Object.keys(SYNC.m))if(!cur[k]){delete SYNC.m[k];const[col,id]=k.split('/');ps.push(fs.deleteDoc(fs.doc(db,'users',USER.uid,col,id)))}
+if(!ps.length)return;SYNC.pend.expenses=true;updPill();
+Promise.all(ps).then(()=>fs.waitForPendingWrites(db)).then(()=>{clearLeg();updPill()}).catch(()=>{SYNC.err=true;updPill()})}).catch(()=>{})}
 document.addEventListener('click',e=>{const n=e.target.closest('[data-nav]');if(n){V.tab=n.dataset.nav;V.list=null;V.arch=false;render();return}const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
 document.addEventListener('input',e=>{const i=e.target.id;if(i==='lq'){V.q=e.target.value;const p=e.target.selectionStart;render();const x=$('#lq');x.focus();x.setSelectionRange(p,p)}if(i==='eq'){V.eq=e.target.value;const p=e.target.selectionStart;render();const x=$('#eq');x.focus();x.setSelectionRange(p,p)}});
 document.addEventListener('change',e=>{const i=e.target.id;if(i==='lsort'){V.sort=e.target.value;render()}if(i==='esort'){V.esort=e.target.value;render()}if(i==='theme'){S.settings.theme=e.target.value;save();applyTheme()}if(i==='dcur'){S.settings.cur=e.target.value;save()}});
