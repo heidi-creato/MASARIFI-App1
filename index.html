@@ -88,7 +88,7 @@ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dat
 if(V.list){const l=getList(V.list);if(!l){V.list=null;return render()}
 let ex=listExp(l.id);const q=V.eq.trim().toLowerCase();if(q)ex=ex.filter(e=>(e.name+' '+(e.desc||'')+' '+(e.cat||'')).toLowerCase().includes(q));
 ex.sort(V.esort==='amt'?(x,y)=>y.amt-x.amt:(x,y)=>(y.date+(y.time||'')).localeCompare(x.date+(x.time||'')));
-h=`<button class="back" data-act="back">‹ قوائمي</button><div class="row"><div class="ico" style="background:${l.color}22">${l.icon}</div><div class="grow"><h1 style="margin:0">${esc(l.name)}</h1></div><button class="btn sec" data-act="listMenu">خيارات</button></div>${l.desc?`<p class="mute">${esc(l.desc)}</p>`:''}
+h=`<button class="back" data-act="back">‹ قوائمي</button><div class="row"><div class="ico" style="background:${l.color}22">${l.icon}</div><div class="grow"><h1 style="margin:0">${esc(l.name)}</h1></div><button class="btn sec" data-act="exp">تصدير</button><button class="btn sec" data-act="listMenu">خيارات</button></div>${l.desc?`<p class="mute">${esc(l.desc)}</p>`:''}
 <div class="card" style="margin-top:12px"><div class="mute">المجموع · <span class="num">${listExp(l.id).length}</span> مصروف${l.end?' · حتى <span class="num">'+fd(l.end)+'</span>':''}</div>${totHTML(totals(listExp(l.id)),1)}</div>
 <div class="bar"><input id="eq" placeholder="بحث في المصروفات" value="${esc(V.eq)}"><select id="esort" style="width:auto"><option value="date">الأحدث</option><option value="amt" ${V.esort==='amt'?'selected':''}>الأكبر مبلغًا</option></select></div>
 ${ex.length?ex.map(e=>expRow(e)).join(''):`<div class="empty">${V.eq?'لا توجد نتائج':'لم تُسجَّل مصروفات بعد. اضغط «مصروف سريع» لإضافة أول مصروف.'}</div>`}`}
@@ -158,20 +158,20 @@ lDel:()=>{const l=getList(V.list);confirmBox(`حذف «${esc(l.name)}» وكل �
 // ===== Firebase: ألصق إعدادات مشروعك هنا (إعدادات الويب ليست سرية؛ الحماية الفعلية من Security Rules) =====
 const FIREBASE_CONFIG={apiKey:'AIzaSyCgWa3dB5gnS1n6Rkx0PcknFoQEr27EOSw',authDomain:'masarifi-01.firebaseapp.com',projectId:'masarifi-01',storageBucket:'masarifi-01.firebasestorage.app',messagingSenderId:'1048911057503',appId:'1:1048911057503:web:c108129ab9d2d934fac1ea'};
 const FB_READY=Object.values(FIREBASE_CONFIG).every(Boolean);
-let AUTHREADY=false,USER=null,FB=null,FBERR='';
+let AUTHREADY=false,USER=null,FB=null,FBERR='',LASTPW='';
 const AM={'auth/invalid-credential':'البريد أو كلمة المرور غير صحيحة','auth/email-already-in-use':'هذا البريد مسجّل مسبقًا','auth/weak-password':'كلمة المرور ضعيفة','auth/invalid-email':'البريد الإلكتروني غير صالح','auth/network-request-failed':'تعذر الاتصال بالإنترنت','auth/too-many-requests':'محاولات كثيرة، حاول لاحقًا','auth/popup-closed-by-user':'أُغلقت نافذة Google','auth/unauthorized-domain':'نطاق الموقع غير مضاف في Firebase Authorized domains'};
 async function fbInit(){if(!FB_READY)return;
 const B='https://www.gstatic.com/firebasejs/10.14.1/';
 const[app,auth,fs]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
 const a=app.initializeApp(FIREBASE_CONFIG);FB={auth,fs,au:auth.getAuth(a),db:fs.getFirestore(a)};
-auth.onAuthStateChanged(FB.au,async u=>{USER=u;MK=null;KR=null;KRDONE=false;V.rk=null;FBERR='';KEY='myexp_v1_'+(u?u.uid:'anon');loadS();AUTHREADY=true;render();if(u){await ensureProfile(u);try{await loadKR()}catch(e){FBERR='تعذر قراءة مفاتيح التشفير. تحقق من القواعد والاتصال'}render()}})}
+auth.onAuthStateChanged(FB.au,async u=>{USER=u;MK=null;KR=null;KRDONE=false;V.rk=null;FBERR='';if(!u)LASTPW='';KEY='myexp_v1_'+(u?u.uid:'anon');loadS();AUTHREADY=true;render();if(u){await ensureProfile(u);try{await loadKR();if(KR){try{MK=await kget(u.uid)}catch(e){}}if(!MK&&LASTPW){try{if(KR)await autoUnlock(LASTPW);else await setupKeys(LASTPW);LASTPW=''}catch(e){}}}catch(e){FBERR='تعذر قراءة مفاتيح التشفير. تحقق من القواعد والاتصال'}render()}})}
 async function ensureProfile(u){const{fs,db}=FB,r=fs.doc(db,'users',u.uid);
 try{const x=await fs.getDoc(r);if(x.exists())await fs.updateDoc(r,{lastLoginAt:fs.serverTimestamp()});else await fs.setDoc(r,{email:u.email||'',displayName:u.displayName||'',createdAt:fs.serverTimestamp(),lastLoginAt:fs.serverTimestamp(),encryptionVersion:0})}
 catch(e){toast('تعذر حفظ الملف الشخصي. تحقق من نشر قواعد Firestore')}}
 function authView(){const m=V.am||'login';const T={login:'تسجيل الدخول',signup:'حساب جديد',reset:'استعادة كلمة المرور'};
 return `<h1>${T[m]}</h1>${FBERR?`<div class="card" style="color:var(--danger)">${esc(FBERR)}</div>`:''}<div class="card"><label style="margin-top:0">البريد الإلكتروني</label><input id="au-e" type="email" dir="ltr" autocomplete="email">
 ${m!=='reset'?`<label>كلمة المرور</label><input id="au-p" type="password" dir="ltr" autocomplete="${m==='login'?'current-password':'new-password'}">`:''}
-${m==='signup'?`<label>تأكيد كلمة المرور</label><input id="au-p2" type="password" dir="ltr" autocomplete="new-password"><p class="mute">8 أحرف على الأقل. سنستخدمها لاحقًا لحماية تشفير بياناتك، ولا يمكن لأحد استعادتها لك.</p>`:''}
+${m==='signup'?`<label>تأكيد كلمة المرور</label><input id="au-p2" type="password" dir="ltr" autocomplete="new-password"><p class="mute">8 أحرف على الأقل. تُشفَّر بياناتك تلقائيًا بكلمة مرورك. إذا نسيتها وأعدت تعيينها فلن يستطيع أحد استعادة بياناتك إلا بمفتاح الاسترداد (يمكنك إنشاؤه من الإعدادات).</p>`:''}
 <div class="btns"><button class="btn grow" data-act="authGo">${m==='reset'?'إرسال رابط الاستعادة':T[m]}</button></div></div>
 ${m!=='reset'?'<button class="btn sec full" data-act="google">المتابعة باستخدام Google</button>':''}
 <div class="btns" style="justify-content:center;flex-wrap:wrap">${m!=='login'?'<button class="back" data-act="amode" data-m="login">لدي حساب</button>':''}${m!=='signup'?'<button class="back" data-act="amode" data-m="signup">إنشاء حساب</button>':''}${m==='login'?'<button class="back" data-act="amode" data-m="reset">نسيت كلمة المرور؟</button>':''}</div>`}
@@ -181,7 +181,7 @@ function accountCard(){if(!FB_READY)return `<div class="card"><b>الحساب</b
 if(!USER)return '';return `<div class="card"><b>الحساب</b><p class="mute" style="margin:6px 0"><span class="num">${esc(USER.email||'')}</span> · ${USER.emailVerified?'البريد مُفعّل':'البريد غير مُفعّل'}</p><div class="btns" style="margin-top:8px"><button class="btn sec grow" data-act="resetPw">تغيير كلمة المرور</button><button class="btn dng grow" data-act="logout">تسجيل الخروج</button></div></div>`}
 Object.assign(A,{
 amode:t=>{V.am=t.dataset.m;render()},
-async authGo(){const e=$('#au-e').value.trim(),p=($('#au-p')||{}).value||'',m=V.am||'login',{auth,au}=FB;
+async authGo(){const e=$('#au-e').value.trim(),p=($('#au-p')||{}).value||'',m=V.am||'login',{auth,au}=FB;if(m!=='reset')LASTPW=p;
 try{if(m==='reset'){await auth.sendPasswordResetEmail(au,e);return toast('إن كان البريد مسجّلًا فقد أُرسل رابط الاستعادة')}
 if(m==='signup'){if(p.length<8)return toast('كلمة المرور 8 أحرف على الأقل');if(p!==$('#au-p2').value)return toast('كلمتا المرور غير متطابقتين');const c=await auth.createUserWithEmailAndPassword(au,e,p);await auth.sendEmailVerification(c.user);toast('أُرسل رابط التحقق إلى بريدك')}
 else await auth.signInWithEmailAndPassword(au,e,p)}catch(x){toast(AM[x.code]||'تعذر إكمال العملية')}},
@@ -213,33 +213,17 @@ const kref=()=>FB.fs.doc(FB.db,'users',USER.uid,'keyring','main');
 const aadK=w=>'mk|'+USER.uid+'|'+w;
 async function loadKR(){const x=await FB.fs.getDoc(kref());KR=x.exists()?x.data():null;KRDONE=true}
 async function rawFromPw(pw){if(!KR)throw 0;const k=await kdf(pw,unb64(KR.salt),KR.kdf);return open(await aes(k),KR.wrapPw,aadK('pw'))}
-async function rawFromRk(txt){const rk=fromB32(txt);if(rk.length!==32)throw 0;return open(await aes(rk),KR.wrapRec,aadK('rec'))}
+async function rawFromRk(txt){const rk=fromB32(txt);if(rk.length!==32||!KR.wrapRec)throw 0;return open(await aes(rk),KR.wrapRec,aadK('rec'))}
 async function wrapPwFor(mk,pw){let kind='argon2id',salt=rnd(16),k;try{k=await kdf(pw,salt,kind)}catch(e){kind='pbkdf2';k=await kdf(pw,salt,kind)}
 return{kdf:kind,salt:b64(salt),wrapPw:await seal(await aes(k),mk,aadK('pw'))}}
 const saveKR=async o=>{KR={...KR,...o,version:1};await FB.fs.setDoc(kref(),{...KR,updatedAt:FB.fs.serverTimestamp()})};
-async function setupKeys(pw){const ex=await FB.fs.getDoc(kref());if(ex.exists())throw new Error('exists');
-const mk=rnd(32),rk=rnd(32);KR={};await saveKR({...await wrapPwFor(mk,pw),wrapRec:await seal(await aes(rk),mk,aadK('rec'))});
-MK=await aes(mk,false);return fmtRK(rk)}
 const enc=(o,col,id)=>seal(MK,te.encode(JSON.stringify(o)),'d|'+USER.uid+'|'+col+'|'+id);
 const dec=async(str,col,id)=>JSON.parse(td.decode(await open(MK,str,'d|'+USER.uid+'|'+col+'|'+id)));
 let busy=false;const run=async(msg,fn)=>{if(busy)return;busy=true;toast(msg);try{await fn()}catch(e){console.error(e);toast('تعذر إكمال العملية. تحقق من البيانات المدخلة')}busy=false};
-function cryptoView(){
-if(!KRDONE)return '<div class="empty">'+(FBERR?esc(FBERR):'جاري التحميل…')+'</div>';
-if(V.rk)return `<h1>مفتاح الاسترداد</h1><div class="card"><p>هذا المفتاح هو طريقتك الوحيدة لاستعادة بياناتك إذا نسيت كلمة مرور التشفير. لا يستطيع أحد استعادته لك، ولن يُعرض مرة أخرى.</p><div class="num" style="font-size:17px;word-break:break-all;font-weight:600">${V.rk}</div>
-<div class="btns"><button class="btn sec grow" data-act="dlRk">تنزيل كملف</button></div><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="rkok" style="width:auto">حفظت المفتاح في مكان آمن</label><div class="btns"><button class="btn grow" data-act="rkDone">متابعة</button></div></div>`;
-if(!KR)return `<h1>حماية بياناتك</h1><div class="card"><p>ستُشفَّر بياناتك على جهازك قبل إرسالها، ولا يقدر أحد على قراءتها غيرك. اختر كلمة مرور تشفير (10 أحرف على الأقل). هي منفصلة عن كلمة مرور الحساب، وإن فقدتها ولم تملك مفتاح الاسترداد فلا يمكن استعادة البيانات.</p>
-<label>كلمة مرور التشفير</label><input id="cp1" type="password" dir="ltr" autocomplete="new-password"><label>تأكيد كلمة المرور</label><input id="cp2" type="password" dir="ltr" autocomplete="new-password"><div class="btns"><button class="btn grow" data-act="cSetup">تفعيل التشفير</button></div></div>`;
-if(V.cm==='rec')return `<h1>الاسترداد بالمفتاح</h1><div class="card"><label style="margin-top:0">مفتاح الاسترداد</label><input id="rk" dir="ltr" autocomplete="off"><label>كلمة مرور تشفير جديدة</label><input id="cp1" type="password" dir="ltr" autocomplete="new-password"><div class="btns"><button class="btn grow" data-act="cRec">استرداد</button><button class="btn sec grow" data-act="cm" data-m="">رجوع</button></div></div>`;
-return `<h1>فتح بياناتك</h1><div class="card"><label style="margin-top:0">كلمة مرور التشفير</label><input id="cp1" type="password" dir="ltr" autocomplete="current-password"><div class="btns"><button class="btn grow" data-act="cUnlock">فتح</button></div></div>
-<div class="btns" style="justify-content:center"><button class="back" data-act="cm" data-m="rec">نسيت كلمة المرور؟ استخدم مفتاح الاسترداد</button><button class="back" data-act="logout">تسجيل الخروج</button></div>`}
-function securityCard(){if(!USER||!MK)return '';return `<div class="card"><b>الأمان والتشفير</b><p class="mute" style="margin:6px 0">التشفير AES-256-GCM مفعّل. المفتاح يبقى في ذاكرة الجهاز فقط.</p><div class="btns" style="flex-direction:column;margin-top:8px"><button class="btn sec" data-act="cChange">تغيير كلمة مرور التشفير</button><button class="btn sec" data-act="cNewRk">إنشاء مفتاح استرداد جديد</button><button class="btn sec" data-act="cTest">اختبار التشفير والمزامنة</button><button class="btn sec" data-act="cLock">قفل الآن</button></div></div>`}
 const pwForm=(t,f,btn,act)=>sheet(`<h1>${t}</h1>${f}<div class="btns"><button class="btn grow" data-act="${act}">${btn}</button><button class="btn sec grow" data-act="close">إلغاء</button></div>`);
 const pwi=(id,l)=>`<label>${l}</label><input id="${id}" type="password" dir="ltr" autocomplete="off">`;
 Object.assign(A,{
 cm:t=>{V.cm=t.dataset.m;render()},
-cSetup:()=>run('جاري التفعيل…',async()=>{const p=$('#cp1').value;if(p.length<10)return toast('كلمة المرور 10 أحرف على الأقل');if(p!==$('#cp2').value)return toast('كلمتا المرور غير متطابقتين');V.rk=await setupKeys(p);render()}),
-cUnlock:()=>run('جاري الفتح…',async()=>{try{MK=await aes(await rawFromPw($('#cp1').value),false);render()}catch(e){toast('كلمة المرور غير صحيحة')}}),
-cRec:()=>run('جاري الاسترداد…',async()=>{const p=$('#cp1').value;if(p.length<10)return toast('كلمة المرور 10 أحرف على الأقل');let mk;try{mk=await rawFromRk($('#rk').value)}catch(e){return toast('مفتاح الاسترداد غير صحيح')}await saveKR(await wrapPwFor(mk,p));MK=await aes(mk,false);V.cm='';render();toast('تم الاسترداد وتعيين كلمة مرور جديدة')}),
 dlRk:()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['MyExpenses Recovery Key\n'+V.rk+'\n'],{type:'text/plain'}));a.download='myexpenses-recovery-key.txt';a.click()},
 rkDone:()=>{if(!$('#rkok').checked)return toast('أكّد حفظ المفتاح أولًا');V.rk=null;render()},
 cLock:()=>{MK=null;render()},
@@ -258,6 +242,68 @@ await fs.setDoc(r,{encryptedPayload:c});const g=await fs.getDoc(r);let rd;try{rd
 $('#tr').innerHTML='<div class="card">'+L.map(x=>'<div>'+x+'</div>').join('')+'</div>'}),
 cTest2:()=>run('جاري القراءة…',async()=>{const g=await FB.fs.getDoc(FB.fs.doc(FB.db,'users',USER.uid,'settings','crypto-test'));if(!g.exists())return $('#tr').innerHTML='<div class="card">لا يوجد مستند اختبار. شغّل «كتابة وقراءة» على جهاز أولًا.</div>';
 try{const d=await dec(g.data().encryptedPayload,'settings','crypto-test');$('#tr').innerHTML='<div class="card">✓ فُكّ التشفير على هذا الجهاز. كُتب الاختبار في <span class="num">'+new Date(d.t).toLocaleString('en-US')+'</span></div>'}catch(e){$('#tr').innerHTML='<div class="card">✗ تعذر فك التشفير</div>'}})
+});
+// ===== التشفير التلقائي: المفتاح يُشتق من كلمة مرور الحساب ويُحفظ على الجهاز غير قابل للاستخراج =====
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open('myexp_keys',1);r.onupgradeneeded=()=>r.result.createObjectStore('k');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const kget=async id=>{const d=await idb();return new Promise(res=>{const q=d.transaction('k').objectStore('k').get(id);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})};
+const kput=async(id,v)=>{const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('k','readwrite');v===null?t.objectStore('k').delete(id):t.objectStore('k').put(v,id);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})};
+async function useKey(k){MK=k;try{await kput(USER.uid,k)}catch(e){}}
+async function setupKeys(pw){const x=await FB.fs.getDoc(kref());if(x.exists())throw new Error('exists');const mk=rnd(32);KR={};await saveKR(await wrapPwFor(mk,pw));await useKey(await aes(mk,false))}
+const autoUnlock=async pw=>useKey(await aes(await rawFromPw(pw),false));
+function cryptoView(){
+if(!KRDONE)return '<div class="empty">'+(FBERR?esc(FBERR):'جاري التحميل…')+'</div>';
+if(V.rk)return `<h1>مفتاح الاسترداد</h1><div class="card"><p>هذا المفتاح هو طريقتك لاستعادة بياناتك إذا نسيت كلمة المرور وأعدت تعيينها. لن يُعرض مرة أخرى.</p><div class="num" style="font-size:17px;word-break:break-all;font-weight:600">${V.rk}</div>
+<div class="btns"><button class="btn sec grow" data-act="dlRk">تنزيل كملف</button></div><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="rkok" style="width:auto">حفظت المفتاح في مكان آمن</label><div class="btns"><button class="btn grow" data-act="rkDone">متابعة</button></div></div>`;
+if(!KR)return `<h1>حماية بياناتك</h1><div class="card"><p>أنشئ كلمة مرور لحماية بياناتك. تُشفَّر على جهازك ولا يقدر أحد على قراءتها غيرك.</p><label>كلمة المرور (10 أحرف على الأقل)</label><input id="cp1" type="password" dir="ltr" autocomplete="new-password"><div class="btns"><button class="btn grow" data-act="cSetup">متابعة</button></div></div><div class="btns" style="justify-content:center"><button class="back" data-act="logout">تسجيل الخروج</button></div>`;
+if(V.cm==='rec')return `<h1>الاسترداد بالمفتاح</h1><div class="card"><label style="margin-top:0">مفتاح الاسترداد</label><input id="rk" dir="ltr" autocomplete="off">${LASTPW?'':'<label>كلمة مرور جديدة</label><input id="cp1" type="password" dir="ltr" autocomplete="new-password">'}<div class="btns"><button class="btn grow" data-act="cRec">استرداد</button><button class="btn sec grow" data-act="cm" data-m="">رجوع</button></div></div>`;
+return `<h1>فتح بياناتك</h1><div class="card"><p class="mute" style="margin-top:0">${LASTPW?'بياناتك مشفّرة بكلمة مرور سابقة. أدخلها وسنربطها بكلمة مرورك الحالية تلقائيًا.':'أدخل كلمة مرور بياناتك.'}</p><input id="cp1" type="password" dir="ltr" autocomplete="current-password"><div class="btns"><button class="btn grow" data-act="cUnlock">فتح</button></div></div>
+<div class="btns" style="justify-content:center"><button class="back" data-act="cm" data-m="rec">استخدام مفتاح الاسترداد</button><button class="back" data-act="logout">تسجيل الخروج</button></div>`}
+function securityCard(){if(!USER||!MK)return '';return `<div class="card"><b>الأمان والتشفير</b><p class="mute" style="margin:6px 0">بياناتك تُشفَّر تلقائيًا بكلمة مرورك (AES-256-GCM). إذا نسيتها وأعدت تعيينها فلن تُستعاد البيانات إلا بمفتاح الاسترداد.</p><div class="btns" style="flex-direction:column;margin-top:8px"><button class="btn sec" data-act="cNewRk">مفتاح الاسترداد (موصى به)</button><button class="btn sec" data-act="cTest">اختبار التشفير والمزامنة</button></div></div>`}
+Object.assign(A,{
+logout:async()=>{try{if(USER)await kput(USER.uid,null)}catch(e){}LASTPW='';FB.auth.signOut(FB.au)},
+cSetup:()=>run('جاري التفعيل…',async()=>{const p=$('#cp1').value;if(p.length<10)return toast('كلمة المرور 10 أحرف على الأقل');await setupKeys(p);render()}),
+cUnlock:()=>run('جاري الفتح…',async()=>{const p=$('#cp1').value;let raw;try{raw=await rawFromPw(p)}catch(e){return toast('كلمة المرور غير صحيحة')}if(LASTPW&&LASTPW!==p)await saveKR(await wrapPwFor(raw,LASTPW));LASTPW='';await useKey(await aes(raw,false));render()}),
+cRec:()=>run('جاري الاسترداد…',async()=>{const np=LASTPW||($('#cp1')||{}).value||'';if(np.length<8)return toast('كلمة المرور قصيرة');let mk;try{mk=await rawFromRk($('#rk').value)}catch(e){return toast('مفتاح الاسترداد غير صحيح')}await saveKR(await wrapPwFor(mk,np));LASTPW='';await useKey(await aes(mk,false));V.cm='';render();toast('تم الاسترداد')})
+});
+// ===== تصدير ومشاركة القائمة (PDF / صورة) =====
+const TPL={classic:{n:'كلاسيكي أخضر',hb:'#0e5a4a',ht:'#ffffff',ac:'#0e5a4a',th:'#e4f0ec',dc:'#ffffff',bar:'#ffffff'},royal:{n:'ملكي داكن',hb:'#14181f',ht:'#f2dfa6',ac:'#b8923a',th:'#f4ecd6',dc:'#b8923a',bar:'#b8923a'},clean:{n:'أبيض بسيط',hb:'#ffffff',ht:'#17231f',ac:'#2f6fb5',th:'#eef3fa',dc:'#2f6fb5',bar:'#2f6fb5'}};
+const loadJS=u=>new Promise((r,j)=>{const s=document.createElement('script');s.src=u;s.onload=r;s.onerror=j;document.head.appendChild(s)});
+let LIBS=null,RC={};
+const loadLibs=()=>LIBS||(LIBS=Promise.all([window.html2canvas||loadJS('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),window.jspdf||loadJS('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')]).catch(e=>{LIBS=null;throw e}));
+function buildReport(l,tk){
+const T=TPL[tk],ex=listExp(l.id).slice().sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))),tt=totals(ex),cs=Object.keys(tt);
+const R1=15,R2=21,chunks=[];let i=0,cap=R1;while(i<ex.length){chunks.push(ex.slice(i,i+cap));i+=cap;cap=R2}if(!chunks.length)chunks.push([]);
+if(chunks[chunks.length-1].length+2+cs.length>(chunks.length===1?R1:R2))chunks.push([]);
+const N=chunks.length,issued=fd(today()),per=l.end?fd(l.start)+' - '+fd(l.end):ex.length?fd(ex[0].date)+' - '+fd(ex[ex.length-1].date):fd(l.start);
+const F="font-family:'IBM Plex Sans Arabic',sans-serif;letter-spacing:0;";
+const ltr=x=>`<span dir="ltr" style="unicode-bidi:isolate">${x}</span>`;
+const cr=fd(new Date(l.created||now()).toISOString().slice(0,10));
+let n=0;
+return chunks.map((rows,pi)=>{
+const head=pi?`<div style="height:70px;background:${T.hb};color:${T.ht};display:flex;align-items:center;justify-content:space-between;padding:0 40px;border-bottom:3px solid ${T.ac}"><b style="font-size:22px">${esc(l.name)}</b><span style="font-size:14px">تابع التقرير</span></div><div style="height:16px"></div>`
+:`<div style="height:260px;background:${T.hb};color:${T.ht};position:relative;overflow:hidden;text-align:center;border-bottom:4px solid ${T.ac}"><div style="position:absolute;width:300px;height:300px;border-radius:50%;background:${T.dc};opacity:.1;top:-120px;right:-80px"></div><div style="position:absolute;width:200px;height:200px;border-radius:50%;background:${T.dc};opacity:.1;bottom:-90px;left:-50px"></div>
+<div style="position:relative;padding-top:52px"><div style="font-size:15px;opacity:.85">تقرير المصروفات</div><div style="width:60px;height:3px;background:${T.bar};margin:12px auto 14px"></div><div style="font-size:${l.name.length>28?34:50}px;font-weight:600;line-height:1.35;max-height:140px;overflow:hidden;padding:0 50px">${esc(l.name)}</div>${l.desc?`<div style="font-size:15px;opacity:.85;margin-top:8px;padding:0 60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.desc)}</div>`:''}</div></div>
+<div style="height:80px;display:flex;border-bottom:1px solid #ddd">${[['الفترة',per],['عدد المصروفات',ex.length],['تاريخ الإنشاء',cr],['تاريخ الإصدار',issued]].map(x=>`<div style="flex:1;text-align:center;padding-top:16px"><div style="font-size:12px;color:#777">${x[0]}</div><div style="font-size:15px;font-weight:600;margin-top:6px">${ltr(x[1])}</div></div>`).join('')}</div><div style="height:16px"></div>`;
+const th=`<div style="display:flex;height:40px;line-height:40px;background:${T.th};font-size:13px;font-weight:600;padding:0 40px;color:${T.ac}"><div style="width:50px">#</div><div style="flex:1">اسم المصروف</div><div style="width:120px">التاريخ</div><div style="width:170px;text-align:left">المبلغ</div></div>`;
+const body=rows.map(e=>{n++;return `<div style="display:flex;height:40px;line-height:40px;font-size:14px;padding:0 40px;border-bottom:1px solid #eee;${n%2?'':'background:#fafafa'}"><div style="width:50px;color:#888">${n}</div><div style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(e.name)}${e.cat?`<span style="color:#999;font-size:12px"> · ${esc(e.cat)}</span>`:''}</div><div style="width:120px">${ltr(fd(e.date))}</div><div style="width:170px;text-align:left;font-weight:600">${ltr(fmt(e.amt,e.cur))}</div></div>`}).join('');
+const tot=pi===N-1?`<div style="margin:24px 40px 0;border-top:3px solid ${T.ac};padding-top:14px">${cs.length?cs.map(c=>`<div style="display:flex;justify-content:space-between;font-size:22px;font-weight:600;color:${T.ac};line-height:40px"><span>المجموع الكلي${cs.length>1?' ('+c+')':''}:</span>${ltr(fmt(tt[c],c))}</div>`).join(''):'<div style="color:#888">لا توجد مصروفات</div>'}${cs.length>1?'<div style="font-size:11px;color:#888">لا يوجد تحويل بين العملات، ولكل عملة مجموع مستقل.</div>':''}</div>`:'';
+const foot=`<div style="position:absolute;bottom:0;left:0;right:0;height:50px;border-top:1px solid #ddd;display:flex;align-items:center;justify-content:space-between;padding:0 40px;font-size:12px;color:#777"><b dir="ltr" style="color:${T.ac};font-size:15px"><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:${T.ac};margin-right:6px;vertical-align:-2px"></span>MyExpenses</b><span>صفحة ${ltr((pi+1)+' / '+N)}</span><span>${ltr(issued)}</span></div>`;
+return `<div style="width:794px;height:1123px;position:relative;background:#fff;color:#17231f;direction:rtl;overflow:hidden;${F}">${head}${th}${body}${tot}${foot}</div>`}).join('')}
+async function makeFile(l,tk,kind){
+await loadLibs();await Promise.all([document.fonts.load("400 16px 'IBM Plex Sans Arabic'"),document.fonts.load("600 16px 'IBM Plex Sans Arabic'")]);
+const st=document.createElement('div');st.style.cssText='position:fixed;left:-10000px;top:0';st.innerHTML=buildReport(l,tk);document.body.appendChild(st);
+const els=[...st.children],sc=els.length<=3?2:1.25,cv=[];
+try{for(const e of els)cv.push(await html2canvas(e,{scale:sc,backgroundColor:'#ffffff'}))}finally{st.remove()}
+const nm=(l.name.replace(/[\\/:*?"<>|]+/g,'_').slice(0,40)||'report');
+if(kind==='pdf'){const d=new window.jspdf.jsPDF({unit:'pt',format:'a4'});cv.forEach((c,i)=>{if(i)d.addPage();d.addImage(c.toDataURL('image/jpeg',.92),'JPEG',0,0,595.28,841.89)});return new File([d.output('blob')],nm+'.pdf',{type:'application/pdf'})}
+const o=document.createElement('canvas');o.width=cv[0].width;o.height=cv.reduce((a,c)=>a+c.height,0);const g=o.getContext('2d');let y=0;cv.forEach(c=>{g.drawImage(c,0,y);y+=c.height});
+return new File([await new Promise(r=>o.toBlob(r,'image/png'))],nm+'.png',{type:'image/png'})}
+Object.assign(A,{
+exp:()=>sheet(`<h1>تصدير ومشاركة</h1><label style="margin-top:0">قالب التقرير</label><select id="tpl">${Object.entries(TPL).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('')}</select><div class="btns" style="flex-direction:column"><button class="btn" data-act="exDo" data-k="pdf" data-m="share">مشاركة PDF</button><button class="btn" data-act="exDo" data-k="png" data-m="share">مشاركة صورة</button><button class="btn sec" data-act="exDo" data-k="pdf" data-m="dl">تنزيل PDF</button><button class="btn sec" data-act="exDo" data-k="png" data-m="dl">تنزيل صورة</button></div>`),
+exDo:t=>{const l=getList(V.list),tk=$('#tpl').value,k=t.dataset.k,m=t.dataset.m,ex=listExp(l.id),sig=[l.id,tk,k,l.upd,ex.length,ex.reduce((a,e)=>a+(e.upd||0),0)].join('|');
+return run('جاري إنشاء التقرير…',async()=>{let f=RC[sig];if(!f){f=await makeFile(l,tk,k);RC={};RC[sig]=f}
+if(m==='share'&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:l.name});return}catch(e){if(e.name==='AbortError')return;if(e.name==='NotAllowedError')return toast('الملف جاهز. اضغط مشاركة مرة أخرى')}}
+const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);if(m==='share')toast('المشاركة غير مدعومة هنا، تم التنزيل')})}
 });
 document.addEventListener('click',e=>{const n=e.target.closest('[data-nav]');if(n){V.tab=n.dataset.nav;V.list=null;V.arch=false;render();return}const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
 document.addEventListener('input',e=>{const i=e.target.id;if(i==='lq'){V.q=e.target.value;const p=e.target.selectionStart;render();const x=$('#lq');x.focus();x.setSelectionRange(p,p)}if(i==='eq'){V.eq=e.target.value;const p=e.target.selectionStart;render();const x=$('#eq');x.focus();x.setSelectionRange(p,p)}});
