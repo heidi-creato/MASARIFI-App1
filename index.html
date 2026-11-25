@@ -103,7 +103,7 @@ ex.sort(V.esort==='amt'?(x,y)=>y.amt-x.amt:(x,y)=>(y.date+(y.time||'')).localeCo
 h=`<button class="back" data-act="back">‹ قوائمي</button><div class="row"><div class="ico" style="background:${l.color}22">${l.icon}</div><div class="grow"><h1 style="margin:0">${esc(l.name)}</h1></div><button class="btn sec" data-act="exp">تصدير</button><button class="btn sec" data-act="listMenu">خيارات</button></div>${l.desc?`<p class="mute">${esc(l.desc)}</p>`:''}
 <div class="card" style="margin-top:12px"><div class="mute">المجموع · <span class="num">${listExp(l.id).length}</span> مصروف${l.end?' · حتى <span class="num">'+fd(l.end)+'</span>':''}</div>${totHTML(totals(listExp(l.id)),1)}</div>
 <div class="bar"><input id="eq" placeholder="بحث في المصروفات" value="${esc(V.eq)}"><select id="esort" style="width:auto"><option value="date">الأحدث</option><option value="amt" ${V.esort==='amt'?'selected':''}>الأكبر مبلغًا</option></select></div>
-${ex.length?ex.map(e=>expRow(e)).join(''):`<div class="empty">${V.eq?'لا توجد نتائج':'لم تُسجَّل مصروفات بعد. اضغط «مصروف سريع» لإضافة أول مصروف.'}</div>`}`}
+${ex.length?ex.map(e=>expRow(e)).join(''):`<div class="empty">${V.eq?'لا توجد نتائج':'لم تُسجَّل مصروفات بعد. اضغط «مصروف سريع» لإضافة أول مصروف.'}</div>`}${notesBlock(l)}`}
 else if(V.tab==='home'){const all=S.expenses.filter(e=>{const l=getList(e.list);return l&&!l.arch});const rec=[...all].sort((x,y)=>(y.date+(y.time||'')).localeCompare(x.date+(x.time||''))).slice(0,5);
 h=`<h1>مصاريفي - Masarifi</h1>${verifyBanner()}<div class="card"><div class="mute">مجموع كل القوائم النشطة (لكل عملة على حدة)</div>${totHTML(totals(all),1)}</div>
 ${S.lists.length?'':`<div class="empty">ابدأ بإنشاء قائمة لتسجيل مصروفاتك.<br><br><button class="btn" data-act="addList">إنشاء قائمة</button></div>`}
@@ -138,15 +138,15 @@ const o={name,desc:$('#ld').value.trim(),icon:pick.icon,color:pick.color,start:s
 if(l)Object.assign(l,o);else S.lists.push(Object.assign({id:uid(),created:now(),pin:false,arch:false},o));save();closeSheet();render();toast('تم الحفظ')}}
 
 function expForm(e,lid){if(!S.lists.length){toast('أنشئ قائمة أولًا');V.tab='lists';V.list=null;render();return listForm()}
-const act=S.lists.filter(l=>!l.arch||l.id===e?.list);const sel=e?.list||lid||V.list||act[0]?.id;const cur=e?.cur||S.settings.cur;
+const act=S.lists.filter(l=>!l.arch||l.id===e?.list);const sel=e?.list||lid||V.list||act[0]?.id;const cur=e?.cur||S.settings.cur;const tOn=e?!!e.time:true,tVal=e?(e.time||nowTime()):nowTime();
 sheet(`<h1>${e?'تعديل المصروف':'مصروف جديد'}</h1><label style="margin-top:0">القائمة</label><select id="el">${act.map(l=>`<option value="${l.id}" ${l.id===sel?'selected':''}>${l.icon} ${esc(l.name)}</option>`).join('')}</select>
 <label>اسم المصروف</label><input id="en" maxlength="80" value="${esc(e?.name)}">
 <div class="two"><div><label>المبلغ</label><input id="ea" inputmode="decimal" autocomplete="off" dir="ltr" placeholder="0" value="${e?toInput(e.amt,e.cur):''}"></div><div><label>العملة</label><select id="ec">${Object.keys(CUR).map(c=>`<option ${c===cur?'selected':''}>${c}</option>`).join('')}</select></div></div>
-<label>التاريخ</label><input type="date" id="ed" value="${e?.date||today()}"><label>ملاحظات</label><textarea id="eno" rows="2" maxlength="500">${esc(e?.note)}</textarea>
+<label>التاريخ</label><input type="date" id="ed" value="${e?.date||today()}"><label>الوقت</label><div class="row" style="gap:10px"><input type="time" id="et" value="${tVal}" ${tOn?'':'disabled'}><label style="margin:0;display:flex;align-items:center;gap:6px;white-space:nowrap;color:var(--ink);font-size:15px"><input type="checkbox" id="eton" style="width:auto" ${tOn?'checked':''}>تفعيل</label></div><label>ملاحظات</label><textarea id="eno" rows="2" maxlength="500">${esc(e?.note)}</textarea>
 <div class="btns"><button class="btn grow" id="sv">حفظ</button><button class="btn sec grow" data-act="close">إلغاء</button></div>`);
-const ai=$('#ea');ai.oninput=()=>{let v=norm(ai.value).replace(/[^0-9.]/g,'');const p=v.split('.');ai.value=p.length>1?p[0]+'.'+p.slice(1).join(''):v};
+$('#eton').onchange=()=>{$('#et').disabled=!$('#eton').checked};const ai=$('#ea');ai.oninput=()=>{let v=norm(ai.value).replace(/[^0-9.]/g,'');const p=v.split('.');ai.value=p.length>1?p[0]+'.'+p.slice(1).join(''):v};
 $('#sv').onclick=()=>{const name=$('#en').value.trim(),c=$('#ec').value,m=toMinor($('#ea').value,c);if(!name)return toast('اكتب اسم المصروف');if(m===null||m<=0)return toast('أدخل مبلغًا صحيحًا');if(!Number.isSafeInteger(m))return toast('المبلغ كبير جدًا');
-const o={list:$('#el').value,name,amt:m,cur:c,date:$('#ed').value||today(),time:e?e.time:nowTime(),cat:e?e.cat:'',desc:e?e.desc:'',note:$('#eno').value.trim(),upd:now()};
+const o={list:$('#el').value,name,amt:m,cur:c,date:$('#ed').value||today(),time:$('#eton').checked?($('#et').value||nowTime()):'',cat:e?e.cat:'',desc:e?e.desc:'',note:$('#eno').value.trim(),upd:now()};
 if(e)Object.assign(e,o);else S.expenses.push(Object.assign({id:uid(),created:now()},o));const l=getList(o.list);if(l)l.upd=now();save();closeSheet();render();toast('تم الحفظ')}}
 
 const A={
@@ -162,7 +162,7 @@ listMenu:()=>{const l=getList(V.list);sheet(`<h1>خيارات القائمة</h1
 lEdit:()=>listForm(getList(V.list)),
 lPin:()=>{const l=getList(V.list);l.pin=!l.pin;l.upd=now();save();closeSheet();render()},
 lArch:()=>{const l=getList(V.list);l.arch=!l.arch;l.upd=now();save();closeSheet();V.list=null;V.tab='lists';render();toast(l.arch?'تمت الأرشفة':'تمت الاستعادة')},
-lDup:()=>{const l=getList(V.list),id=uid();S.lists.push({...l,id,name:l.name+' (نسخة)',pin:false,created:now(),upd:now()});listExp(l.id).forEach(e=>S.expenses.push({...e,id:uid(),list:id}));save();closeSheet();render();toast('تم نسخ القائمة')},
+lDup:()=>{const l=getList(V.list),id=uid();S.lists.push({...l,id,name:l.name+' (نسخة)',notes:(l.notes||[]).map(n=>({...n,id:uid()})),pin:false,created:now(),upd:now()});listExp(l.id).forEach(e=>S.expenses.push({...e,id:uid(),list:id}));save();closeSheet();render();toast('تم نسخ القائمة')},
 lDel:()=>{const l=getList(V.list);confirmBox(`حذف «${esc(l.name)}» وكل مصروفاتها (${listExp(l.id).length}) نهائيًا؟`,()=>{S.expenses=S.expenses.filter(e=>e.list!==l.id);S.lists=S.lists.filter(x=>x.id!==l.id);save();V.list=null;V.tab='lists';render();toast('تم الحذف')})}
 };
 // ===== Firebase: ألصق إعدادات مشروعك هنا (إعدادات الويب ليست سرية؛ الحماية الفعلية من Security Rules) =====
@@ -285,31 +285,38 @@ const loadJS=u=>new Promise((r,j)=>{const s=document.createElement('script');s.s
 let LIBS=null,RC={};
 const loadLibs=()=>LIBS||(LIBS=Promise.all([window.html2canvas||loadJS('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),window.jspdf||loadJS('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')]).catch(e=>{LIBS=null;throw e}));
 function buildReport(l,tk){
-const T=TPL[tk],ex=listExp(l.id).slice().sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))),tt=totals(ex),cs=Object.keys(tt);
-const R1=15,R2=21,chunks=[];let i=0,cap=R1;while(i<ex.length){chunks.push(ex.slice(i,i+cap));i+=cap;cap=R2}if(!chunks.length)chunks.push([]);
-if(chunks[chunks.length-1].length+2+cs.length>(chunks.length===1?R1:R2))chunks.push([]);
-const N=chunks.length,issued=fd(today()),per=l.end?fd(l.start)+' - '+fd(l.end):ex.length?fd(ex[0].date)+' - '+fd(ex[ex.length-1].date):fd(l.start);
+const T=TPL[tk],ex=listExp(l.id).slice().sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))),tt=totals(ex),cs=Object.keys(tt),notes=(l.notes||[]).filter(n=>n&&n.t);
+const issued=fd(today()),per=l.end?fd(l.start)+' - '+fd(l.end):ex.length?fd(ex[0].date)+' - '+fd(ex[ex.length-1].date):fd(l.start),cr=fd(new Date(l.created||now()).toISOString().slice(0,10));
 const F="font-family:'IBM Plex Sans Arabic',sans-serif;letter-spacing:0;";
 const ltr=x=>`<span dir="ltr" style="unicode-bidi:isolate">${x}</span>`;
-const cr=fd(new Date(l.created||now()).toISOString().slice(0,10));
-let n=0;
-return chunks.map((rows,pi)=>{
-const head=pi?`<div style="height:70px;background:${T.hb};color:${T.ht};display:flex;align-items:center;justify-content:space-between;padding:0 40px;border-bottom:3px solid ${T.ac}"><b style="font-size:22px">${esc(l.name)}</b><span style="font-size:14px">تابع التقرير</span></div><div style="height:16px"></div>`
-:`<div style="height:260px;background:${T.hb};color:${T.ht};position:relative;overflow:hidden;text-align:center;border-bottom:4px solid ${T.ac}"><div style="position:absolute;width:300px;height:300px;border-radius:50%;background:${T.dc};opacity:.1;top:-120px;right:-80px"></div><div style="position:absolute;width:200px;height:200px;border-radius:50%;background:${T.dc};opacity:.1;bottom:-90px;left:-50px"></div>
-<div style="position:relative;padding-top:52px"><div style="font-size:15px;opacity:.85">تقرير المصروفات</div><div style="width:60px;height:3px;background:${T.bar};margin:12px auto 14px"></div><div style="font-size:${l.name.length>28?34:50}px;font-weight:600;line-height:1.35;max-height:140px;overflow:hidden;padding:0 50px">${esc(l.name)}</div>${l.desc?`<div style="font-size:15px;opacity:.85;margin-top:8px;padding:0 60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.desc)}</div>`:''}</div></div>
-<div style="height:80px;display:flex;border-bottom:1px solid #ddd">${[['الفترة',per],['عدد المصروفات',ex.length],['تاريخ الإنشاء',cr],['تاريخ الإصدار',issued]].map(x=>`<div style="flex:1;text-align:center;padding-top:16px"><div style="font-size:12px;color:#777">${x[0]}</div><div style="font-size:15px;font-weight:600;margin-top:6px">${ltr(x[1])}</div></div>`).join('')}</div><div style="height:16px"></div>`;
-const th=`<div style="display:flex;height:40px;line-height:40px;background:${T.th};font-size:13px;font-weight:600;padding:0 40px;color:${T.ac}"><div style="width:50px">#</div><div style="flex:1">اسم المصروف</div><div style="width:120px">التاريخ</div><div style="width:170px;text-align:left">المبلغ</div></div>`;
-const body=rows.map(e=>{n++;return `<div style="display:flex;height:40px;line-height:40px;font-size:14px;padding:0 40px;border-bottom:1px solid #eee;${n%2?'':'background:#fafafa'}"><div style="width:50px;color:#888">${n}</div><div style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(e.name)}${e.cat?`<span style="color:#999;font-size:12px"> · ${esc(e.cat)}</span>`:''}</div><div style="width:120px">${ltr(fd(e.date))}</div><div style="width:170px;text-align:left;font-weight:600">${ltr(fmt(e.amt,e.cur))}</div></div>`}).join('');
-const tot=pi===N-1?`<div style="margin:24px 40px 0;border-top:3px solid ${T.ac};padding-top:14px">${cs.length?cs.map(c=>`<div style="display:flex;justify-content:space-between;font-size:22px;font-weight:600;color:${T.ac};line-height:40px"><span>المجموع الكلي${cs.length>1?' ('+c+')':''}:</span>${ltr(fmt(tt[c],c))}</div>`).join(''):'<div style="color:#888">لا توجد مصروفات</div>'}${cs.length>1?'<div style="font-size:11px;color:#888">لا يوجد تحويل بين العملات، ولكل عملة مجموع مستقل.</div>':''}</div>`:'';
-const foot=`<div style="position:absolute;bottom:0;left:0;right:0;height:50px;border-top:1px solid #ddd;display:flex;align-items:center;justify-content:space-between;padding:0 40px;font-size:12px;color:#777"><b style="color:${T.ac};font-size:15px"><img src="${ICON()}" style="width:22px;height:22px;border-radius:5px;vertical-align:-6px;margin-left:6px">مصاريفي - Masarifi</b><span>صفحة ${ltr((pi+1)+' / '+N)}</span><span>${ltr(issued)}</span></div>`;
-return `<div style="width:794px;height:1123px;position:relative;background:#fff;color:#17231f;direction:rtl;overflow:hidden;${F}">${head}${th}${body}${tot}${foot}</div>`}).join('')}
+const PH=1123,RH=34,FOOT=50,TH=34,nh=t=>Math.max(1,Math.ceil(t.length/85))*24+8;
+const items=ex.map(e=>({t:'row',e,h:RH}));
+items.push({t:'tot',h:25+(cs.length?cs.length*36+(cs.length>1?18:0):36)});
+if(notes.length)notes.forEach((n,i)=>items.push({t:'n',n,i,h:(i?0:44)+nh(n.t)}));else items.push({t:'n',n:null,i:0,h:80});
+const avail=f=>PH-(f?246:66)-TH-FOOT-12;
+const pages=[];let cur=[],used=0,av=avail(true);
+items.forEach(it=>{if(cur.length&&used+it.h>av){pages.push(cur);cur=[];used=0;av=avail(false)}cur.push(it);used+=it.h});pages.push(cur);
+const N=pages.length;let n=0;
+return pages.map((its,pi)=>{const last=pi===N-1;
+const head=pi?`<div style="height:56px;background:${T.hb};color:${T.ht};display:flex;align-items:center;justify-content:space-between;padding:0 40px;border-bottom:3px solid ${T.ac};box-sizing:border-box"><b style="font-size:20px">${esc(l.name)}</b><span style="font-size:13px">تابع التقرير</span></div><div style="height:10px"></div>`
+:`<div style="height:180px;background:${T.hb};color:${T.ht};position:relative;overflow:hidden;text-align:center;border-bottom:4px solid ${T.ac};box-sizing:border-box"><div style="position:absolute;width:240px;height:240px;border-radius:50%;background:${T.dc};opacity:.1;top:-100px;right:-70px"></div><div style="position:absolute;width:160px;height:160px;border-radius:50%;background:${T.dc};opacity:.1;bottom:-80px;left:-40px"></div>
+<div style="position:relative;padding-top:24px"><div style="font-size:13px;opacity:.85">تقرير المصروفات</div><div style="width:50px;height:3px;background:${T.bar};margin:8px auto 10px"></div><div style="font-size:${l.name.length>28?28:40}px;font-weight:600;line-height:1.3;max-height:76px;overflow:hidden;padding:0 50px">${esc(l.name)}</div>${l.desc?`<div style="font-size:14px;opacity:.85;margin-top:6px;padding:0 60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.desc)}</div>`:''}</div></div>
+<div style="height:56px;display:flex;border-bottom:1px solid #ddd;box-sizing:border-box">${[['الفترة',per],['عدد المصروفات',ex.length],['تاريخ الإنشاء',cr],['تاريخ الإصدار',issued]].map(x=>`<div style="flex:1;text-align:center;padding-top:9px"><div style="font-size:11px;color:#777">${x[0]}</div><div style="font-size:14px;font-weight:600;margin-top:4px">${ltr(x[1])}</div></div>`).join('')}</div><div style="height:10px"></div>`;
+const th=its.some(x=>x.t==='row')?`<div style="display:flex;height:${TH}px;line-height:${TH}px;background:${T.th};font-size:13px;font-weight:600;padding:0 40px;color:${T.ac};box-sizing:border-box"><div style="width:50px">#</div><div style="flex:1">اسم المصروف</div><div style="width:120px">التاريخ</div><div style="width:170px;text-align:left">المبلغ</div></div>`:'';
+const body=its.map(it=>{
+if(it.t==='row'){n++;const e=it.e;return `<div style="display:flex;height:${RH}px;line-height:${RH}px;font-size:14px;padding:0 40px;border-bottom:1px solid #eee;box-sizing:border-box;${n%2?'':'background:#fafafa'}"><div style="width:50px;color:#888">${n}</div><div style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(e.name)}${e.cat?`<span style="color:#999;font-size:12px"> · ${esc(e.cat)}</span>`:''}</div><div style="width:120px">${ltr(fd(e.date)+(e.time?' '+e.time:''))}</div><div style="width:170px;text-align:left;font-weight:600">${ltr(fmt(e.amt,e.cur))}</div></div>`}
+if(it.t==='tot')return `<div style="margin:14px 40px 0;border-top:3px solid ${T.ac};padding-top:8px">${cs.length?cs.map(c=>`<div style="display:flex;justify-content:space-between;font-size:20px;font-weight:600;color:${T.ac};line-height:36px;height:36px"><span>المجموع الكلي${cs.length>1?' ('+c+')':''}:</span>${ltr(fmt(tt[c],c))}</div>`).join(''):'<div style="color:#888;line-height:36px">لا توجد مصروفات</div>'}${cs.length>1?'<div style="font-size:11px;color:#888;height:18px">لا يوجد تحويل بين العملات، ولكل عملة مجموع مستقل.</div>':''}</div>`;
+return (it.i===0?`<div style="margin:14px 40px 0;height:30px;line-height:30px;box-sizing:border-box;font-size:17px;font-weight:600;color:${T.ac};border-bottom:1px solid #ddd">ملاحظات</div>`:'')+(it.n?`<div style="margin:0 40px;display:flex;gap:8px;font-size:14px;line-height:24px;padding:4px 0"><span>•</span><span style="flex:1;word-break:break-word">${esc(it.n.t)}</span></div>`:'<div style="margin:0 40px;color:#888;font-size:14px;line-height:36px">لا يوجد</div>')}).join('');
+const fs_=`display:flex;align-items:center;justify-content:space-between;padding:0 40px;font-size:12px;color:#777;border-top:1px solid #ddd;box-sizing:border-box;`;
+const foot=`<div style="${last?'margin-top:16px;height:46px;':'position:absolute;bottom:0;left:0;right:0;height:50px;'}${fs_}"><b style="color:${T.ac};font-size:14px"><img src="${ICON()}" style="width:22px;height:22px;border-radius:5px;vertical-align:-6px;margin-left:6px">مصاريفي - Masarifi</b><span>صفحة ${ltr((pi+1)+' / '+N)}</span><span>${ltr(issued)}</span></div>`;
+return `<div style="width:794px;${last?'':'height:'+PH+'px;'}position:relative;background:#fff;color:#17231f;direction:rtl;overflow:hidden;${F}">${head}${th}${body}${foot}</div>`}).join('')}
 async function makeFile(l,tk,kind){
 await loadLibs();await Promise.all([document.fonts.load("400 16px 'IBM Plex Sans Arabic'"),document.fonts.load("600 16px 'IBM Plex Sans Arabic'")]);
 const st=document.createElement('div');st.style.cssText='position:fixed;left:-10000px;top:0';st.innerHTML=buildReport(l,tk);document.body.appendChild(st);
 const els=[...st.children],sc=els.length<=3?2:1.25,cv=[];
 try{for(const e of els)cv.push(await html2canvas(e,{scale:sc,backgroundColor:'#ffffff'}))}finally{st.remove()}
 const nm=(l.name.replace(/[\\/:*?"<>|]+/g,'_').slice(0,40)||'report');
-if(kind==='pdf'){const d=new window.jspdf.jsPDF({unit:'pt',format:'a4'});cv.forEach((c,i)=>{if(i)d.addPage();d.addImage(c.toDataURL('image/jpeg',.92),'JPEG',0,0,595.28,841.89)});return new File([d.output('blob')],nm+'.pdf',{type:'application/pdf'})}
+if(kind==='pdf'){const W=595.28;let d;cv.forEach((c,i)=>{const h=W*c.height/c.width,o=h>W?'p':'l';if(!i)d=new window.jspdf.jsPDF({unit:'pt',format:[W,h],orientation:o});else d.addPage([W,h],o);d.addImage(c.toDataURL('image/jpeg',.92),'JPEG',0,0,W,h)});return new File([d.output('blob')],nm+'.pdf',{type:'application/pdf'})}
 const o=document.createElement('canvas');o.width=cv[0].width;o.height=cv.reduce((a,c)=>a+c.height,0);const g=o.getContext('2d');let y=0;cv.forEach(c=>{g.drawImage(c,0,y);y+=c.height});
 return new File([await new Promise(r=>o.toBlob(r,'image/png'))],nm+'.png',{type:'image/png'})}
 Object.assign(A,{
@@ -360,7 +367,7 @@ const bstr=(v,n)=>typeof v==='string'?v.slice(0,n):'';
 const bdate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v);
 const bnum=v=>Number.isFinite(v)?v:now();
 const bid=v=>typeof v==='string'&&v.length>0&&v.length<=80&&!v.includes('/');
-function cleanList(l){if(!l||!bid(l.id)||!bstr(l.name,60).trim())return null;return{id:l.id,name:bstr(l.name,60),desc:bstr(l.desc,200),icon:ICONS.includes(l.icon)?l.icon:ICONS[0],color:COLORS.includes(l.color)?l.color:COLORS[0],start:bdate(l.start)?l.start:today(),end:bdate(l.end)?l.end:'',created:bnum(l.created),upd:bnum(l.upd),pin:!!l.pin,arch:!!l.arch}}
+function cleanList(l){if(!l||!bid(l.id)||!bstr(l.name,60).trim())return null;return{id:l.id,name:bstr(l.name,60),desc:bstr(l.desc,200),icon:ICONS.includes(l.icon)?l.icon:ICONS[0],color:COLORS.includes(l.color)?l.color:COLORS[0],start:bdate(l.start)?l.start:today(),end:bdate(l.end)?l.end:'',created:bnum(l.created),upd:bnum(l.upd),pin:!!l.pin,arch:!!l.arch,notes:Array.isArray(l.notes)?l.notes.filter(n=>n&&bid(n.id)&&typeof n.t==='string'&&n.t.trim()).slice(0,100).map(n=>({id:n.id,t:n.t.slice(0,300)})):[]}}
 function cleanExp(e){if(!e||!bid(e.id)||!bid(e.list)||!bstr(e.name,80).trim()||!CUR[e.cur]||!Number.isSafeInteger(e.amt)||e.amt<=0)return null;return{id:e.id,list:e.list,name:bstr(e.name,80),amt:e.amt,cur:e.cur,date:bdate(e.date)?e.date:today(),time:/^\d{2}:\d{2}$/.test(e.time||'')?e.time:'',cat:bstr(e.cat,40),desc:bstr(e.desc,200),note:bstr(e.note,500),created:bnum(e.created),upd:bnum(e.upd)}}
 Object.assign(A,{
 bkExp:()=>sheet(`<h1>تصدير نسخة احتياطية</h1><p class="mute">يُنشأ ملف مشفّر فيه كل قوائمك ومصروفاتك. ${isPwUser()?'أدخل كلمة مرور حسابك للتأكيد، وستحتاج إليها لفتح الملف عند الاستيراد.':'سيُطلب تأكيد دخولك عبر Google، ثم اختر كلمة مرور للملف.'}</p><label>${isPwUser()?'كلمة مرور الحساب':'كلمة مرور الملف (8 أحرف على الأقل)'}</label><input id="bp" type="password" dir="ltr" autocomplete="current-password"><div class="btns"><button class="btn grow" data-act="bkExp2">تصدير</button><button class="btn sec grow" data-act="close">إلغاء</button></div>`),
@@ -387,6 +394,15 @@ const have=new Set(S.lists.map(l=>l.id));
 BK.E.forEach(e=>{if(!have.has(e.list))return;const i=S.expenses.findIndex(x=>x.id===e.id);if(i<0){S.expenses.push(e);add++}else if(u){Object.assign(S.expenses[i],e);upd++}});
 BK=null;save();closeSheet();render();toast('أُضيف '+add+(upd?' وحُدّث '+upd:'')+' سجل')}
 });
+// ===== ملاحظات القائمة =====
+function notesBlock(l){const n=l.notes||[];return `<h2>ملاحظات</h2><div class="card">${n.length?n.map(x=>`<div class="item" data-act="noteEdit" data-id="${x.id}" style="display:flex;gap:8px;padding:4px 0"><span>•</span><span class="grow" style="white-space:pre-wrap;word-break:break-word">${esc(x.t)}</span></div>`).join(''):'<span class="mute">لا يوجد</span>'}<div class="bar" style="margin:12px 0 0"><input id="nt" maxlength="300" placeholder="أضف ملاحظة للقائمة"><button class="btn" data-act="noteAdd">إضافة</button></div></div>`}
+Object.assign(A,{
+noteAdd:()=>{const l=getList(V.list),v=(($('#nt')||{}).value||'').trim();if(!l)return;if(!v)return toast('اكتب الملاحظة');l.notes=l.notes||[];if(l.notes.length>=100)return toast('الحد الأقصى 100 ملاحظة');l.notes.push({id:uid(),t:v.slice(0,300)});l.upd=now();save();render()},
+noteEdit:t=>{const l=getList(V.list),n=(l.notes||[]).find(x=>x.id===t.dataset.id);if(!n)return;sheet(`<h1>ملاحظة</h1><textarea id="nt2" rows="3" maxlength="300">${esc(n.t)}</textarea><div class="btns"><button class="btn grow" data-act="noteSave" data-id="${n.id}">حفظ</button><button class="btn dng grow" data-act="noteDel" data-id="${n.id}">حذف</button></div>`)},
+noteSave:t=>{const l=getList(V.list),n=(l.notes||[]).find(x=>x.id===t.dataset.id),v=$('#nt2').value.trim();if(!n)return closeSheet();if(!v)return toast('اكتب الملاحظة');n.t=v.slice(0,300);l.upd=now();save();closeSheet();render()},
+noteDel:t=>{const id=t.dataset.id;confirmBox('حذف هذه الملاحظة؟',()=>{const l=getList(V.list);l.notes=(l.notes||[]).filter(x=>x.id!==id);l.upd=now();save();render()})}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='nt'){e.preventDefault();A.noteAdd()}});
 document.addEventListener('click',e=>{const n=e.target.closest('[data-nav]');if(n){V.tab=n.dataset.nav;V.list=null;V.arch=false;render();return}const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
 document.addEventListener('input',e=>{const i=e.target.id;if(i==='lq'){V.q=e.target.value;const p=e.target.selectionStart;render();const x=$('#lq');x.focus();x.setSelectionRange(p,p)}if(i==='eq'){V.eq=e.target.value;const p=e.target.selectionStart;render();const x=$('#eq');x.focus();x.setSelectionRange(p,p)}});
 document.addEventListener('change',e=>{const i=e.target.id;if(i==='lsort'){V.sort=e.target.value;render()}if(i==='esort'){V.esort=e.target.value;render()}if(i==='theme'){S.settings.theme=e.target.value;save();applyTheme()}if(i==='dcur'){S.settings.cur=e.target.value;save()}});
