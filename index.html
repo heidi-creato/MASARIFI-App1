@@ -106,9 +106,9 @@ ls.sort((x,y)=>(y.pin?1:0)-(x.pin?1:0)||(V.sort==='name'?x.name.localeCompare(y.
 h=`<h1>${V.arch?'القوائم المؤرشفة':'قوائمي'}</h1><div class="bar"><input id="lq" placeholder="بحث" value="${esc(V.q)}"><select id="lsort" style="width:auto"><option value="upd">آخر تعديل</option><option value="name" ${V.sort==='name'?'selected':''}>الاسم</option><option value="start" ${V.sort==='start'?'selected':''}>تاريخ البداية</option><option value="total" ${V.sort==='total'?'selected':''}>المجموع</option></select></div>
 ${ls.length?ls.map(listCard).join(''):`<div class="empty">${V.arch?'لا توجد قوائم مؤرشفة':'لا توجد قوائم.'}</div>`}
 <div class="btns">${V.arch?'':'<button class="btn" data-act="addList">قائمة جديدة</button>'}<button class="btn sec" data-act="toggleArch">${V.arch?'العودة للقوائم':'المؤرشفة'}</button></div>`}
-else{const s=S.settings;h=`<h1>الإعدادات</h1>${accountCard()}${securityCard()}<div class="card"><label style="margin-top:0">المظهر</label><select id="theme"><option value="auto">حسب الجهاز</option><option value="light" ${s.theme==='light'?'selected':''}>فاتح</option><option value="dark" ${s.theme==='dark'?'selected':''}>داكن</option></select>
+else{const s=S.settings;h=`<h1>الإعدادات</h1>${accountCard()}${backupCard()}<div class="card"><label style="margin-top:0">المظهر</label><select id="theme"><option value="auto">حسب الجهاز</option><option value="light" ${s.theme==='light'?'selected':''}>فاتح</option><option value="dark" ${s.theme==='dark'?'selected':''}>داكن</option></select>
 <label>العملة الافتراضية</label><select id="dcur">${Object.keys(CUR).map(c=>`<option ${s.cur===c?'selected':''}>${c}</option>`).join('')}</select></div>
-<div class="card mute">الأرقام تظهر بالإنجليزية دائمًا. البيانات محفوظة في هذا المتصفح فقط حاليًا، ولا تُرسل إلى أي خادم. المزامنة والتشفير في مراحل لاحقة.</div>`}
+<div class="card mute">الأرقام تظهر بالإنجليزية دائمًا.</div>`}
 a.innerHTML=pill()+h}
 
 function sheet(h){V.sheet=h;let b=document.querySelector('.sheetbg');if(!b){b=document.createElement('div');b.className='sheetbg';document.body.appendChild(b)}b.innerHTML=`<div class="sheet">${h}</div>`;b.onclick=e=>{if(e.target===b)closeSheet()}}
@@ -266,7 +266,6 @@ if(!KR)return `<h1>حماية بياناتك</h1><div class="card"><p>أنشئ �
 if(V.cm==='rec')return `<h1>الاسترداد بالمفتاح</h1><div class="card"><label style="margin-top:0">مفتاح الاسترداد</label><input id="rk" dir="ltr" autocomplete="off">${LASTPW?'':'<label>كلمة مرور جديدة</label><input id="cp1" type="password" dir="ltr" autocomplete="new-password">'}<div class="btns"><button class="btn grow" data-act="cRec">استرداد</button><button class="btn sec grow" data-act="cm" data-m="">رجوع</button></div></div>`;
 return `<h1>فتح بياناتك</h1><div class="card"><p class="mute" style="margin-top:0">${LASTPW?'بياناتك مشفّرة بكلمة مرور سابقة. أدخلها وسنربطها بكلمة مرورك الحالية تلقائيًا.':'أدخل كلمة مرور بياناتك.'}</p><input id="cp1" type="password" dir="ltr" autocomplete="current-password"><div class="btns"><button class="btn grow" data-act="cUnlock">فتح</button></div></div>
 <div class="btns" style="justify-content:center"><button class="back" data-act="cm" data-m="rec">استخدام مفتاح الاسترداد</button><button class="back" data-act="logout">تسجيل الخروج</button></div>`}
-function securityCard(){if(!USER||!MK)return '';return `<div class="card"><b>الأمان والتشفير</b><p class="mute" style="margin:6px 0">بياناتك تُشفَّر تلقائيًا بكلمة مرورك (AES-256-GCM). إذا نسيتها وأعدت تعيينها فلن تُستعاد البيانات إلا بمفتاح الاسترداد.</p><div class="btns" style="flex-direction:column;margin-top:8px"><button class="btn sec" data-act="cNewRk">مفتاح الاسترداد (موصى به)</button><button class="btn sec" data-act="cTest">اختبار التشفير والمزامنة</button></div></div>`}
 Object.assign(A,{
 logout:async()=>{try{if(USER)await kput(USER.uid,null)}catch(e){}LASTPW='';FB.auth.signOut(FB.au)},
 cSetup:()=>run('جاري التفعيل…',async()=>{const p=$('#cp1').value;if(p.length<10)return toast('كلمة المرور 10 أحرف على الأقل');await setupKeys(p);render()}),
@@ -345,6 +344,42 @@ ps.push(fs.setDoc(fs.doc(db,'users',USER.uid,col,r.id),{encryptedPayload:await e
 for(const k of Object.keys(SYNC.m))if(!cur[k]){delete SYNC.m[k];const[col,id]=k.split('/');ps.push(fs.deleteDoc(fs.doc(db,'users',USER.uid,col,id)))}
 if(!ps.length)return;SYNC.pend.expenses=true;updPill();
 Promise.all(ps).then(()=>fs.waitForPendingWrites(db)).then(()=>{clearLeg();updPill()}).catch(()=>{SYNC.err=true;updPill()})}).catch(()=>{})}
+// ===== النسخ الاحتياطي والاستيراد (مشفّر، يتطلب كلمة مرور الحساب) =====
+const isPwUser=()=>!!USER&&USER.providerData.some(p=>p.providerId==='password');
+let BK=null;
+function backupCard(){if(!USER||!MK)return '';return `<div class="card"><b>النسخ الاحتياطي</b><p class="mute" style="margin:6px 0">صدّر كل قوائمك ومصروفاتك في ملف مشفّر، أو استورد نسخة سابقة. تُطلب كلمة مرور حسابك في الحالتين.</p><div class="btns" style="margin-top:8px"><button class="btn sec grow" data-act="bkExp">تصدير نسخة</button><button class="btn sec grow" data-act="bkImp">استيراد نسخة</button></div></div>`}
+async function reauth(pw){const{auth}=FB;if(isPwUser())await auth.reauthenticateWithCredential(USER,auth.EmailAuthProvider.credential(USER.email,pw));else await auth.reauthenticateWithPopup(USER,new auth.GoogleAuthProvider())}
+const bstr=(v,n)=>typeof v==='string'?v.slice(0,n):'';
+const bdate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v);
+const bnum=v=>Number.isFinite(v)?v:now();
+const bid=v=>typeof v==='string'&&v.length>0&&v.length<=80&&!v.includes('/');
+function cleanList(l){if(!l||!bid(l.id)||!bstr(l.name,60).trim())return null;return{id:l.id,name:bstr(l.name,60),desc:bstr(l.desc,200),icon:ICONS.includes(l.icon)?l.icon:ICONS[0],color:COLORS.includes(l.color)?l.color:COLORS[0],start:bdate(l.start)?l.start:today(),end:bdate(l.end)?l.end:'',created:bnum(l.created),upd:bnum(l.upd),pin:!!l.pin,arch:!!l.arch}}
+function cleanExp(e){if(!e||!bid(e.id)||!bid(e.list)||!bstr(e.name,80).trim()||!CUR[e.cur]||!Number.isSafeInteger(e.amt)||e.amt<=0)return null;return{id:e.id,list:e.list,name:bstr(e.name,80),amt:e.amt,cur:e.cur,date:bdate(e.date)?e.date:today(),time:/^\d{2}:\d{2}$/.test(e.time||'')?e.time:'',cat:bstr(e.cat,40),desc:bstr(e.desc,200),note:bstr(e.note,500),created:bnum(e.created),upd:bnum(e.upd)}}
+Object.assign(A,{
+bkExp:()=>sheet(`<h1>تصدير نسخة احتياطية</h1><p class="mute">يُنشأ ملف مشفّر فيه كل قوائمك ومصروفاتك. ${isPwUser()?'أدخل كلمة مرور حسابك للتأكيد، وستحتاج إليها لفتح الملف عند الاستيراد.':'سيُطلب تأكيد دخولك عبر Google، ثم اختر كلمة مرور للملف.'}</p><label>${isPwUser()?'كلمة مرور الحساب':'كلمة مرور الملف (8 أحرف على الأقل)'}</label><input id="bp" type="password" dir="ltr" autocomplete="current-password"><div class="btns"><button class="btn grow" data-act="bkExp2">تصدير</button><button class="btn sec grow" data-act="close">إلغاء</button></div>`),
+bkExp2:()=>run('جاري إنشاء النسخة…',async()=>{const p=$('#bp').value;if(!p)return toast('أدخل كلمة المرور');if(!isPwUser()&&p.length<8)return toast('8 أحرف على الأقل');
+try{await reauth(p)}catch(e){return toast(isPwUser()?'كلمة المرور غير صحيحة':'تعذر تأكيد الدخول')}
+const data={app:'MyExpenses',v:1,created:Date.now(),settings:{cur:S.settings.cur},lists:S.lists,expenses:S.expenses};
+let kind='argon2id',salt=rnd(16),k;try{k=await kdf(p,salt,kind)}catch(e){kind='pbkdf2';k=await kdf(p,salt,kind)}
+const file={format:'myexpenses-backup',v:1,kdf:kind,salt:b64(salt),data:await seal(await aes(k),te.encode(JSON.stringify(data)),'backup|v1')};
+const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(file)],{type:'application/json'}));a.download='myexpenses-backup-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+closeSheet();toast('تم التصدير: '+S.lists.length+' قائمة و'+S.expenses.length+' مصروف')}),
+bkImp:()=>sheet(`<h1>استيراد نسخة</h1><label style="margin-top:0">ملف النسخة</label><input id="bf" type="file" accept=".json,application/json"><label>${isPwUser()?'كلمة مرور الحساب':'كلمة مرور الملف'}</label><input id="bp" type="password" dir="ltr" autocomplete="current-password">${isPwUser()?'<label>كلمة مرور الملف (إن كانت مختلفة عن الحالية)</label><input id="bp2" type="password" dir="ltr" autocomplete="off">':''}<div class="btns"><button class="btn grow" data-act="bkImp2">فتح الملف</button><button class="btn sec grow" data-act="close">إلغاء</button></div>`),
+bkImp2:()=>run('جاري فتح الملف…',async()=>{const p=$('#bp').value,f=$('#bf').files[0];if(!f)return toast('اختر ملف النسخة');if(!p)return toast('أدخل كلمة المرور');if(f.size>20e6)return toast('الملف كبير جدًا');
+try{await reauth(p)}catch(e){return toast(isPwUser()?'كلمة مرور الحساب غير صحيحة':'تعذر تأكيد الدخول')}
+let file;try{file=JSON.parse(await f.text())}catch(e){return toast('الملف غير صالح')}
+if(!file||file.format!=='myexpenses-backup'||file.v!==1||typeof file.data!=='string'||typeof file.salt!=='string'||!['argon2id','pbkdf2'].includes(file.kdf))return toast('الملف غير صالح');
+let d;try{const k=await kdf((($('#bp2')||{}).value)||p,unb64(file.salt),file.kdf);d=JSON.parse(td.decode(await open(await aes(k),file.data,'backup|v1')))}catch(e){return toast('كلمة مرور الملف غير صحيحة أو الملف تالف')}
+if(!d||d.app!=='MyExpenses'||!Array.isArray(d.lists)||!Array.isArray(d.expenses))return toast('محتوى الملف غير صالح');
+const L=d.lists.map(cleanList).filter(Boolean),ids=new Set(L.map(l=>l.id)),E=d.expenses.map(cleanExp).filter(x=>x&&(ids.has(x.list)||S.lists.some(l=>l.id===x.list)));
+BK={L,E};const nl=L.filter(l=>!S.lists.some(x=>x.id===l.id)).length,ne=E.filter(e=>!S.expenses.some(x=>x.id===e.id)).length;
+sheet(`<h1>محتوى النسخة</h1><div class="card"><div><span class="num">${L.length}</span> قائمة (<span class="num">${nl}</span> جديدة)</div><div><span class="num">${E.length}</span> مصروف (<span class="num">${ne}</span> جديد)</div>${d.created?`<div class="mute">أُنشئت في <span class="num">${fd(new Date(d.created).toISOString().slice(0,10))}</span></div>`:''}</div><p class="mute">لن يُحذف أي شيء من بياناتك الحالية.</p><div class="btns" style="flex-direction:column"><button class="btn" data-act="bkGo" data-u="0">استيراد الجديد فقط</button><button class="btn sec" data-act="bkGo" data-u="1">استيراد الجديد وتحديث الموجود</button><button class="btn sec" data-act="close">إلغاء</button></div>`)}),
+bkGo:t=>{if(!BK)return;const u=t.dataset.u==='1';let add=0,upd=0;
+BK.L.forEach(l=>{const i=S.lists.findIndex(x=>x.id===l.id);if(i<0){S.lists.push(l);add++}else if(u){Object.assign(S.lists[i],l);upd++}});
+const have=new Set(S.lists.map(l=>l.id));
+BK.E.forEach(e=>{if(!have.has(e.list))return;const i=S.expenses.findIndex(x=>x.id===e.id);if(i<0){S.expenses.push(e);add++}else if(u){Object.assign(S.expenses[i],e);upd++}});
+BK=null;save();closeSheet();render();toast('أُضيف '+add+(upd?' وحُدّث '+upd:'')+' سجل')}
+});
 document.addEventListener('click',e=>{const n=e.target.closest('[data-nav]');if(n){V.tab=n.dataset.nav;V.list=null;V.arch=false;render();return}const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
 document.addEventListener('input',e=>{const i=e.target.id;if(i==='lq'){V.q=e.target.value;const p=e.target.selectionStart;render();const x=$('#lq');x.focus();x.setSelectionRange(p,p)}if(i==='eq'){V.eq=e.target.value;const p=e.target.selectionStart;render();const x=$('#eq');x.focus();x.setSelectionRange(p,p)}});
 document.addEventListener('change',e=>{const i=e.target.id;if(i==='lsort'){V.sort=e.target.value;render()}if(i==='esort'){V.esort=e.target.value;render()}if(i==='theme'){S.settings.theme=e.target.value;save();applyTheme()}if(i==='dcur'){S.settings.cur=e.target.value;save()}});
