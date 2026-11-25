@@ -164,7 +164,7 @@ async function fbInit(){if(!FB_READY)return;
 const B='https://www.gstatic.com/firebasejs/10.14.1/';
 const[app,auth,fs]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
 const a=app.initializeApp(FIREBASE_CONFIG);FB={auth,fs,au:auth.getAuth(a),db:fs.getFirestore(a)};
-auth.onAuthStateChanged(FB.au,async u=>{USER=u;MK=null;KR=null;KRDONE=false;V.rk=null;FBERR='';if(!u)LASTPW='';KEY='myexp_v1_'+(u?u.uid:'anon');loadS();AUTHREADY=true;render();if(u){await ensureProfile(u);try{await loadKR();if(KR){try{MK=await kget(u.uid)}catch(e){}}if(!MK&&LASTPW){try{if(KR)await autoUnlock(LASTPW);else await setupKeys(LASTPW);LASTPW=''}catch(e){}}}catch(e){FBERR='تعذر قراءة مفاتيح التشفير. تحقق من القواعد والاتصال'}render()}})}
+auth.onAuthStateChanged(FB.au,async u=>{USER=u;MK=null;KR=null;KRDONE=false;V.rk=null;FBERR='';if(!u)LASTPW='';KEY='myexp_v1_'+(u?u.uid:'anon');loadS();AUTHREADY=true;render();if(u){await ensureProfile(u);try{await loadKR();if(KR){try{MK=await kget(u.uid)}catch(e){}}if(!MK&&LASTPW){await silentKeys(LASTPW);if(MK)LASTPW=''}}catch(e){FBERR=e&&e.code==='permission-denied'?'تعذر حفظ مفاتيح التشفير: قواعد Firestore غير محدّثة. انشر ملف firestore.rules الأحدث ثم أعد تحميل الصفحة':'تعذر إعداد مفاتيح التشفير. تحقق من الاتصال وحاول مرة أخرى'}render()}})}
 async function ensureProfile(u){const{fs,db}=FB,r=fs.doc(db,'users',u.uid);
 try{const x=await fs.getDoc(r);if(x.exists())await fs.updateDoc(r,{lastLoginAt:fs.serverTimestamp()});else await fs.setDoc(r,{email:u.email||'',displayName:u.displayName||'',createdAt:fs.serverTimestamp(),lastLoginAt:fs.serverTimestamp(),encryptionVersion:0})}
 catch(e){toast('تعذر حفظ الملف الشخصي. تحقق من نشر قواعد Firestore')}}
@@ -250,8 +250,13 @@ const kput=async(id,v)=>{const d=await idb();return new Promise((res,rej)=>{cons
 async function useKey(k){MK=k;try{await kput(USER.uid,k)}catch(e){}}
 async function setupKeys(pw){const x=await FB.fs.getDoc(kref());if(x.exists())throw new Error('exists');const mk=rnd(32);KR={};await saveKR(await wrapPwFor(mk,pw));await useKey(await aes(mk,false))}
 const autoUnlock=async pw=>useKey(await aes(await rawFromPw(pw),false));
+async function resetKeys(pw){const mk=rnd(32);KR={};await saveKR(await wrapPwFor(mk,pw));await useKey(await aes(mk,false))}
+async function hasEncData(){const{fs,db}=FB;for(const c of['expenseLists','expenses']){const q=await fs.getDocs(fs.query(fs.collection(db,'users',USER.uid,c),fs.limit(1)));if(!q.empty)return true}return false}
+async function silentKeys(pw){if(!KR)return resetKeys(pw);try{return await autoUnlock(pw)}catch(e){}
+if(await hasEncData())return;
+return resetKeys(pw)}
 function cryptoView(){
-if(!KRDONE)return '<div class="empty">'+(FBERR?esc(FBERR):'جاري التحميل…')+'</div>';
+if(FBERR)return '<div class="card" style="color:var(--danger)">'+esc(FBERR)+'</div><div class="btns" style="justify-content:center"><button class="back" data-act="logout">تسجيل الخروج</button></div>';if(!KRDONE)return '<div class="empty">جاري التحميل…</div>';
 if(V.rk)return `<h1>مفتاح الاسترداد</h1><div class="card"><p>هذا المفتاح هو طريقتك لاستعادة بياناتك إذا نسيت كلمة المرور وأعدت تعيينها. لن يُعرض مرة أخرى.</p><div class="num" style="font-size:17px;word-break:break-all;font-weight:600">${V.rk}</div>
 <div class="btns"><button class="btn sec grow" data-act="dlRk">تنزيل كملف</button></div><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="rkok" style="width:auto">حفظت المفتاح في مكان آمن</label><div class="btns"><button class="btn grow" data-act="rkDone">متابعة</button></div></div>`;
 if(!KR)return `<h1>حماية بياناتك</h1><div class="card"><p>أنشئ كلمة مرور لحماية بياناتك. تُشفَّر على جهازك ولا يقدر أحد على قراءتها غيرك.</p><label>كلمة المرور (10 أحرف على الأقل)</label><input id="cp1" type="password" dir="ltr" autocomplete="new-password"><div class="btns"><button class="btn grow" data-act="cSetup">متابعة</button></div></div><div class="btns" style="justify-content:center"><button class="back" data-act="logout">تسجيل الخروج</button></div>`;
