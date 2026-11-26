@@ -40,6 +40,8 @@ nav button.on{color:var(--ac);font-weight:600}nav svg{width:22px;height:22px;fil
 .sheet{background:var(--bg);width:100%;max-width:640px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));animation:up .2s ease-out}
 @keyframes up{from{transform:translateY(30px);opacity:0}}@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
 .sw{display:flex;gap:8px;flex-wrap:wrap}.sw button{width:38px;height:38px;border-radius:10px;border:2px solid transparent;cursor:pointer;background:var(--card);font-size:18px}.sw button.on{border-color:var(--ac)}
+.chips{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}.chip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:6px 14px;cursor:pointer}.chip.on{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}.cd{background:var(--card);border:1px solid var(--line);border-radius:10px;aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;cursor:pointer;padding:0}.cd.t{border-color:var(--ac);font-weight:600}.cd.s{background:var(--ac);color:var(--bg)}.cd i{width:6px;height:6px;border-radius:50%;background:var(--ac);margin-top:3px}.cd.s i{background:var(--bg)}
 .empty{text-align:center;color:var(--mute);padding:36px 10px}.toast{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:30;font-size:14px}
 .back{background:none;border:0;color:var(--ac);padding:0;cursor:pointer;margin-bottom:4px}.pin{color:var(--ac)}
 </style>
@@ -50,6 +52,8 @@ nav button.on{color:var(--ac);font-weight:600}nav svg{width:22px;height:22px;fil
 <nav>
 <button data-nav="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>الرئيسية</button>
 <button data-nav="lists"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>قوائمي</button>
+<button data-nav="reports"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>التقارير</button>
+<button data-nav="cal"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>التقويم</button>
 <button data-nav="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>الإعدادات</button>
 </nav>
 <script>
@@ -105,6 +109,8 @@ h=`<button class="back" data-act="back">‹ قوائمي</button><div class="row
 <div class="card" style="margin-top:12px"><div class="mute">المجموع · <span class="num">${listExp(l.id).length}</span> مصروف${l.end?' · حتى <span class="num">'+fd(l.end)+'</span>':''}</div>${totHTML(totals(listExp(l.id)),1)}</div>
 <div class="btns" style="margin:0 0 12px"><button class="btn grow" data-act="addExp">+ مصروف</button><button class="btn sec grow" data-act="noteNew">+ ملاحظة</button></div><div class="bar"><input id="eq" placeholder="بحث في المصروفات" value="${esc(V.eq)}"><select id="esort" style="width:auto"><option value="date">الأحدث</option><option value="amt" ${V.esort==='amt'?'selected':''}>الأكبر مبلغًا</option></select></div>
 ${ex.length?ex.map(e=>expRow(e)).join(''):`<div class="empty">${V.eq?'لا توجد نتائج':'لم تُسجَّل مصروفات بعد. اضغط «مصروف سريع» لإضافة أول مصروف.'}</div>`}${notesBlock(l)}`}
+else if(V.tab==='reports'){h=reportsView()}
+else if(V.tab==='cal'){h=calView()}
 else if(V.tab==='home'){const all=S.expenses.filter(e=>{const l=getList(e.list);return l&&!l.arch});const rec=[...all].sort((x,y)=>(y.date+(y.time||'')).localeCompare(x.date+(x.time||''))).slice(0,5);
 h=`<h1>مصاريفي - Masarifi</h1>${verifyBanner()}<div class="card"><div class="mute">مجموع كل القوائم النشطة (لكل عملة على حدة)</div>${totHTML(totals(all),1)}</div>
 ${S.lists.length?'':`<div class="empty">ابدأ بإنشاء قائمة لتسجيل مصروفاتك.<br><br><button class="btn" data-act="addList">إنشاء قائمة</button></div>`}
@@ -155,7 +161,7 @@ addList:()=>listForm(),addExp:()=>expForm(null,V.list),close:closeSheet,
 open:t=>{V.list=t.dataset.id;V.eq='';window.scrollTo(0,0);render()},back:()=>{V.list=null;V.tab='lists';render()},
 toggleArch:()=>{V.arch=!V.arch;render()},
 expMenu:t=>{const e=S.expenses.find(x=>x.id===t.dataset.id);sheet(`<h1>${esc(e.name)}</h1><div class="big"><span class="num">${fmt(e.amt,e.cur)}</span></div><p class="mute"><span class="num">${fd(e.date)}</span>${e.cat?' · '+esc(e.cat):''}</p>${e.desc?`<p>${esc(e.desc)}</p>`:''}${e.note?`<p class="mute">${esc(e.note)}</p>`:''}
-<div class="btns"><button class="btn grow" data-act="expEdit" data-id="${e.id}">تعديل</button><button class="btn sec grow" data-act="expCopy" data-id="${e.id}">نسخ</button><button class="btn dng grow" data-act="expDel" data-id="${e.id}">حذف</button></div>`)},
+<div class="btns"><button class="btn grow" data-act="expEdit" data-id="${e.id}">تعديل</button><button class="btn sec grow" data-act="expCopy" data-id="${e.id}">نسخ</button><button class="btn dng grow" data-act="expDel" data-id="${e.id}">حذف</button></div><div class="btns" style="margin-top:8px"><button class="btn sec grow" data-act="goList" data-id="${e.list}">فتح القائمة</button></div>`)},
 expEdit:t=>expForm(S.expenses.find(x=>x.id===t.dataset.id)),
 expCopy:t=>{const e=S.expenses.find(x=>x.id===t.dataset.id);S.expenses.push({...e,id:uid(),created:now(),upd:now()});save();closeSheet();render();toast('تم النسخ')},
 expDel:t=>{const id=t.dataset.id;confirmBox('حذف هذا المصروف نهائيًا؟',()=>{S.expenses=S.expenses.filter(x=>x.id!==id);save();render();toast('تم الحذف')})},
@@ -405,6 +411,57 @@ noteSave:t=>{const l=getList(V.list),n=(l.notes||[]).find(x=>x.id===t.dataset.id
 noteDel:t=>{const id=t.dataset.id;confirmBox('حذف هذه الملاحظة؟',()=>{const l=getList(V.list);l.notes=(l.notes||[]).filter(x=>x.id!==id);l.upd=now();save();render()})}
 });
 document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.df){const v=document.getElementById(t.dataset.df);if(v)v.value=t.value?fd(t.value):''}});
+// ===== التقارير والتقويم =====
+const MN=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
+const WD=['سبت','أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة'];
+const activeExp=()=>S.expenses.filter(e=>{const l=getList(e.list);return l&&!l.arch});
+const sumBy=(a,k)=>{const m={};a.forEach(e=>{const x=k(e);m[x]=(m[x]||0)+e.amt});return m};
+const SV=(h,b)=>`<svg viewBox="0 0 340 ${h}" style="width:100%;height:auto" role="img">${b}</svg>`;
+function barSVG(d,cmp){const W=340,H=170,p=22,max=Math.max(...d.map(x=>x.v),1),n=d.length,bw=Math.min(34,(W-20)/n-6);
+return SV(H,d.map((x,i)=>{const h=Math.max(2,(H-p-18)*x.v/max),cx=10+(W-20)*(i+.5)/n;return `<rect x="${cx-bw/2}" y="${H-p-h}" width="${bw}" height="${h}" rx="4" fill="var(--ac)"/><text x="${cx}" y="${H-p-h-4}" text-anchor="middle" font-size="9" fill="var(--mute)">${cmp(x.v)}</text><text x="${cx}" y="${H-6}" text-anchor="middle" font-size="9" fill="var(--mute)">${x.l}</text>`}).join(''))}
+function lineSVG(d){const W=340,H=140,p=18,max=Math.max(...d.map(x=>x.v),1),n=d.length;
+const pt=d.map((x,i)=>[8+(W-16)*i/(n-1||1),H-p-(H-p-10)*x.v/max]);const pa=pt.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('');
+return SV(H,`<path d="${pa}L${pt[n-1][0].toFixed(1)} ${H-p}L${pt[0][0].toFixed(1)} ${H-p}Z" fill="var(--acb)"/><path d="${pa}" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linejoin="round"/><text x="8" y="${H-4}" font-size="9" fill="var(--mute)">${d[0].l}</text><text x="${W-8}" y="${H-4}" text-anchor="end" font-size="9" fill="var(--mute)">${d[n-1].l}</text>`)}
+function donutSVG(d){const tot=d.reduce((a,x)=>a+x.v,0),R=52,C=2*Math.PI*R;let off=0;
+return `<svg viewBox="0 0 140 140" style="width:140px;height:140px;flex:none" role="img"><g transform="rotate(-90 70 70)">${d.map(x=>{const len=C*x.v/tot,s=`<circle cx="70" cy="70" r="${R}" fill="none" stroke="${x.c}" stroke-width="22" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}"/>`;off+=len;return s}).join('')}</g></svg>`}
+function reportsView(){
+const all=activeExp();if(!all.length)return '<h1>التقارير</h1><div class="empty">لا توجد مصروفات بعد. أضف مصروفات لتظهر التقارير هنا.</div>';
+const curs=[...new Set(all.map(e=>e.cur))].sort((a,b)=>(b===S.settings.cur)-(a===S.settings.cur)),c=curs.includes(V.rc)?V.rc:curs[0],ex=all.filter(e=>e.cur===c);
+const tot=ex.reduce((a,e)=>a+e.amt,0),ds=ex.map(e=>e.date).sort(),days=Math.round((Date.parse(ds[ds.length-1])-Date.parse(ds[0]))/864e5)+1,avg=Math.round(tot/days);
+const cmp=v=>new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:1}).format(v/10**CUR[c].d);
+const mm=sumBy(ex,e=>e.date.slice(0,7)),mk=[];let[y,m]=ds[0].slice(0,7).split('-').map(Number);const[ye,me]=ds[ds.length-1].slice(0,7).split('-').map(Number);
+while(y<ye||(y===ye&&m<=me)){mk.push(y+'-'+String(m).padStart(2,'0'));if(++m>12){m=1;y++}}
+const months=mk.slice(-12).map(k=>({k,l:k.slice(5)+'.'+k.slice(2,4),v:mm[k]||0}));
+const yy=sumBy(ex,e=>e.date.slice(0,4)),dd=sumBy(ex,e=>e.date),last30=[];
+for(let i=29;i>=0;i--){const t=new Date();t.setDate(t.getDate()-i);t.setMinutes(t.getMinutes()-t.getTimezoneOffset());const k=t.toISOString().slice(0,10);last30.push({l:fd(k).slice(0,5),v:dd[k]||0})}
+const lb=sumBy(ex,e=>e.list),ls=Object.keys(lb).map(id=>({id,l:getList(id),v:lb[id]})).sort((a,b)=>b.v-a.v);
+const dn=ls.slice(0,6).map(x=>({v:x.v,c:x.l.color,n:x.l.name}));const rest=ls.slice(6).reduce((a,x)=>a+x.v,0);if(rest)dn.push({v:rest,c:'#9aa5a0',n:'أخرى'});
+const row=(a,b)=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><div class="grow">${a}</div><div><span class="num">${b}</span></div></div>`;
+return `<h1>التقارير</h1>${curs.length>1?`<div class="chips">${curs.map(x=>`<button class="chip ${x===c?'on':''}" data-act="rc" data-c="${x}">${x}</button>`).join('')}</div><p class="mute" style="margin-top:-4px">كل عملة تُحسب على حدة دون تحويل بينها.</p>`:''}
+<div class="card"><div class="mute">إجمالي المصروفات</div><div class="big"><span class="num">${fmt(tot,c)}</span></div><div class="mute"><span class="num">${ex.length}</span> مصروف · متوسط يومي <span class="num">${fmt(avg,c)}</span></div></div>
+<h2>حسب الشهر</h2><div class="card">${barSVG(months,cmp)}</div>
+<h2>آخر 30 يومًا</h2><div class="card">${lineSVG(last30)}</div>
+<h2>مقارنة القوائم</h2><div class="card"><div class="row" style="align-items:center">${donutSVG(dn)}<div class="grow" style="font-size:13px">${dn.map(x=>`<div class="row" style="gap:6px;padding:3px 0"><i style="width:10px;height:10px;border-radius:3px;background:${x.c};flex:none"></i><span class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.n)}</span><span class="mute num">${Math.round(100*x.v/tot)}%</span></div>`).join('')}</div></div></div>
+<h2>أكثر القوائم إنفاقًا</h2><div class="card">${ls.slice(0,5).map(x=>`<div style="padding:6px 0"><div class="row"><span class="grow">${x.l.icon} ${esc(x.l.name)}</span><span class="num">${fmt(x.v,c)}</span></div><div style="height:6px;border-radius:3px;background:var(--acb);margin-top:6px"><div style="height:6px;border-radius:3px;width:${Math.max(3,100*x.v/ls[0].v)}%;background:${x.l.color}"></div></div></div>`).join('')}</div>
+<h2>حسب السنة</h2><div class="card">${Object.keys(yy).sort().reverse().map(k=>row(`<span class="num">${k}</span>`,fmt(yy[k],c))).join('')}</div>
+<h2>تفصيل الأشهر</h2><div class="card">${months.slice().reverse().map(x=>row(`<span class="num">${x.l}</span>`,fmt(x.v,c))).join('')}</div>`}
+function calView(){const t=today();if(V.cy==null){V.cy=+t.slice(0,4);V.cm=+t.slice(5,7)-1}if(!V.cd)V.cd=t;
+const y=V.cy,m=V.cm,dim=new Date(y,m+1,0).getDate(),off=(new Date(y,m,1).getDay()+1)%7,by={};activeExp().forEach(e=>{(by[e.date]=by[e.date]||[]).push(e)});
+const pad=n=>String(n).padStart(2,'0');let cells='';for(let i=0;i<off;i++)cells+='<div></div>';
+for(let d=1;d<=dim;d++){const k=y+'-'+pad(m+1)+'-'+pad(d);cells+=`<button class="cd ${k===t?'t':''} ${k===V.cd?'s':''}" data-act="calDay" data-d="${k}">${d}${by[k]?'<i></i>':''}</button>`}
+const sel=by[V.cd]||[],tt=totals(sel);
+return `<h1>التقويم</h1><div class="row" style="margin-bottom:12px"><button class="btn sec" data-act="calNext" aria-label="الشهر التالي">›</button><div class="grow" style="text-align:center;font-weight:600">${MN[m]} <span class="num">${y}</span></div><button class="btn sec" data-act="calPrev" aria-label="الشهر السابق">‹</button></div>
+<div class="cal mute" style="margin-bottom:6px;font-size:12px">${WD.map(w=>`<div>${w}</div>`).join('')}</div><div class="cal">${cells}</div>
+<div class="btns" style="margin:12px 0 0"><button class="btn sec full" data-act="calToday">اليوم</button></div>
+<h2><span class="num">${fd(V.cd)}</span></h2>${sel.length?`<div class="card">${totHTML(tt,1)}</div>${sel.sort((a,b)=>(b.time||'').localeCompare(a.time||'')).map(e=>expRow(e,1)).join('')}`:'<div class="empty">لا توجد مصروفات في هذا اليوم</div>'}`}
+Object.assign(A,{
+rc:t=>{V.rc=t.dataset.c;render()},
+calDay:t=>{V.cd=t.dataset.d;render()},
+calPrev:()=>{if(--V.cm<0){V.cm=11;V.cy--}render()},
+calNext:()=>{if(++V.cm>11){V.cm=0;V.cy++}render()},
+calToday:()=>{V.cy=null;V.cd=today();render()},
+goList:t=>{V.list=t.dataset.id;V.tab='lists';V.eq='';closeSheet();window.scrollTo(0,0);render()}
+});
 document.addEventListener('click',e=>{const n=e.target.closest('[data-nav]');if(n){V.tab=n.dataset.nav;V.list=null;V.arch=false;render();return}const t=e.target.closest('[data-act]');if(t&&A[t.dataset.act])A[t.dataset.act](t)});
 document.addEventListener('input',e=>{const i=e.target.id;if(i==='lq'){V.q=e.target.value;const p=e.target.selectionStart;render();const x=$('#lq');x.focus();x.setSelectionRange(p,p)}if(i==='eq'){V.eq=e.target.value;const p=e.target.selectionStart;render();const x=$('#eq');x.focus();x.setSelectionRange(p,p)}});
 document.addEventListener('change',e=>{const i=e.target.id;if(i==='lsort'){V.sort=e.target.value;render()}if(i==='esort'){V.esort=e.target.value;render()}if(i==='theme'){S.settings.theme=e.target.value;save();applyTheme()}if(i==='dcur'){S.settings.cur=e.target.value;save()}});
